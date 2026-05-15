@@ -18,6 +18,8 @@ env/
 # Environment variables
 .env
 *.env
+.env.*
+!.env.example
 
 # IDE
 .vscode/
@@ -32,6 +34,11 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
 
 # Logs
 *.log
