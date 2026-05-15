@@ -1,4 +1,5 @@
 from app.services.tmdb_service import discover_movies
+from app.services.gemini_service import generate_reason
 
 RECOMMENDATION_LIMIT = 5
 DEFAULT_RECOMMEND_REASON = "입력한 감정과 분위기에 어울리는 영화입니다."
@@ -65,14 +66,16 @@ def build_unsupported_emotion_response(emotion: str, country: str, language: str
     return response
 
 
-def add_recommend_reason(movies: list[dict]) -> list[dict]:
-    return [
-        {
-            **movie,
-            "recommendReason": DEFAULT_RECOMMEND_REASON,
-        }
-        for movie in movies
-    ]
+def add_recommend_reason(movies: list[dict], raw_mood: str, language: str) -> list[dict]:
+    result = []
+    for movie in movies:
+        reason = generate_reason(
+            raw_mood=raw_mood,
+            movie_title=movie["title"],
+            language=language
+        )
+        result.append({**movie, "recommendReason": reason})
+    return result
 
 
 def merge_unique_movies(
@@ -118,7 +121,7 @@ def search_movies_by_genres(
     )
 
 
-def recommend_movies(emotion: str, country: str, language: str):
+def recommend_movies(emotion: str, raw_mood: str, country: str, language: str):
     if normalize_emotion(emotion) not in EMOTION_GENRE_MAP:
         return build_unsupported_emotion_response(
             emotion=emotion,
@@ -153,7 +156,10 @@ def recommend_movies(emotion: str, country: str, language: str):
         )
         merge_unique_movies(movies, fallback_movies)
 
-    recommended_movies = add_recommend_reason(limit_unique_movies(movies))
+    recommended_movies = add_recommend_reason(
+    limit_unique_movies(movies),
+    raw_mood=raw_mood,
+    language=language)
     success = bool(recommended_movies)
     message = SUCCESS_MESSAGE if success else EMPTY_RESULT_MESSAGE
 
