@@ -1,5 +1,5 @@
 from app.services.tmdb_service import discover_movies
-from app.services.gemini_service import generate_reason
+from backend.app.services.ai_service import generate_reason
 
 RECOMMENDATION_LIMIT = 5
 DEFAULT_RECOMMEND_REASON = "입력한 감정과 분위기에 어울리는 영화입니다."

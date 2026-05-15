@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from app.schemas.recommend_schema import RecommendRequest
 from app.services.recommend_service import recommend_movies
-from app.services.gemini_service import parse_mood
+from backend.app.services.ai_service import parse_mood
 
 router = APIRouter(prefix="/api", tags=["recommend"])
 
