@@ -69,11 +69,7 @@ def build_unsupported_emotion_response(emotion: str, country: str, language: str
 def add_recommend_reason(movies: list[dict], raw_mood: str, language: str) -> list[dict]:
     result = []
     for movie in movies:
-        reason = generate_reason(
-            raw_mood=raw_mood,
-            movie_title=movie["title"],
-            language=language
-        )
+        reason = generate_reason(raw_mood, movie["title"], language)
         result.append({**movie, "recommendReason": reason})
     return result
 
