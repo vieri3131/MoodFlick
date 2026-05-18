@@ -1,8 +1,11 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-@apply bg-gray-50 text-gray-900;
-font-family: 'Pretendard', -apple-system, sans-serif;
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  background-color: #0B0C10; /* 아주 깊은 블랙으로 변경 */
+    color: #FFFFFF;
 }
