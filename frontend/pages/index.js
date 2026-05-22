@@ -8,13 +8,14 @@ import LanguageToggle from '../components/LanguageToggle';
 import AuthModal from '../components/AuthModal';
 import SearchBar from '../components/SearchBar';
 
+// 🎭 10가지 감정 테마 (4개국어 지원)
 const EMOTION_THEMES = [
-  { id: 'happy', genreId: 35, title: { 'ko-KR': '😊 기분 좋은 하루! 유쾌한 코미디', 'en-US': '😊 Feel Good Comedies', 'ja-JP': '😊 気분爽快！愉快なコме디', 'zh-CN': '😊 心情愉悦！欢乐喜剧' } },
+  { id: 'happy', genreId: 35, title: { 'ko-KR': '😊 기분 좋은 하루! 유쾌한 코미디', 'en-US': '😊 Feel Good Comedies', 'ja-JP': '😊 気分爽快！愉快なコメディ', 'zh-CN': '😊 心情愉悦！欢乐喜剧' } },
   { id: 'sad', genreId: 18, title: { 'ko-KR': '😢 마음을 건드리는 감성 드라마', 'en-US': '😢 Emotional & Touching', 'ja-JP': '😢 心に響く感動のドラマ', 'zh-CN': '😢 触动人心的情感剧情' } },
   { id: 'angry', genreId: 28, title: { 'ko-KR': '🔥 스트레스 타파! 화끈한 액션', 'en-US': '🔥 Stress Buster Action', 'ja-JP': '🔥 ストレス発散！爽快アクション', 'zh-CN': '🔥 释放压力！火爆动作' } },
   { id: 'romantic', genreId: 10749, title: { 'ko-KR': '💕 설렘 가득, 달콤한 로맨스', 'en-US': '💕 Romantic & Sweet', 'ja-JP': '💕 ときめき、甘いロマンス', 'zh-CN': '💕 怦然心动，甜蜜浪漫' } },
   { id: 'scary', genreId: 27, title: { 'ko-KR': '👻 오싹한 긴장감, 공포/스릴러', 'en-US': '👻 Chilling Horror', 'ja-JP': '👻 ゾッとする緊張感、ホラー', 'zh-CN': '👻 令人毛骨悚然，恐怖/惊悚' } },
-  { id: 'excited', genreId: 12, title: { 'ko-KR': '🤩 심장 쫄깃! 흥미진진 어드벤처', 'en-US': '🤩 Exciting Adventures', 'ja-JP': '🤩 ドキドキのア드벤처', 'zh-CN': '🤩 惊心动魄！刺激冒险' } },
+  { id: 'excited', genreId: 12, title: { 'ko-KR': '🤩 심장 쫄깃! 흥미진진 어드벤처', 'en-US': '🤩 Exciting Adventures', 'ja-JP': '🤩 ドキドキのアド벤처', 'zh-CN': '🤩 惊心动魄！刺激冒险' } },
   { id: 'calm', genreId: 10751, title: { 'ko-KR': '☕ 차분하게 즐기는 힐링 영화', 'en-US': '☕ Calming Family Movies', 'ja-JP': '☕ 穏やかに楽しむ癒し映画', 'zh-CN': '☕ 平静放松的治愈系电影' } },
   { id: 'lonely', genreId: 10402, title: { 'ko-KR': '🌙 외로움을 달래주는 음악', 'en-US': '🌙 Comforting Music Movies', 'ja-JP': '🌙 孤独を癒す音楽・ミュージカル', 'zh-CN': '🌙 抚慰孤独的音乐电影' } },
   { id: 'tired', genreId: 16, title: { 'ko-KR': '🥱 지친 하루의 끝, 애니메이션', 'en-US': '🥱 Relaxing Animations', 'ja-JP': '🥱 疲れた一日の終わりに、アニメ', 'zh-CN': '🥱 疲惫的一天结束，治愈动画' } },
@@ -31,10 +32,11 @@ const PAGE_TEXT = {
 export default function Home() {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [country, setCountry] = useState(['ALL']); // 👈 국가 기본값을 배열 상태로 변경
+  const [country, setCountry] = useState(['ALL']);
   const [language, setLanguage] = useState('ko-KR');
   const [randomThemes, setRandomThemes] = useState([]);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     const fetchRandomThemes = async () => {
@@ -59,10 +61,9 @@ export default function Home() {
 
   const handleSearch = async (rawMood) => {
     setLoading(true);
+    setHasSearched(true);
     try {
-      // ALL이 포함되어 있으면 빈 문자열 보냄, 아니면 배열 요소들을 'KR,JP' 형태로 결합
       const targetCountry = country.includes('ALL') ? '' : country.join(',');
-      
       const response = await axios.post('http://localhost:8000/api/recommend', {
         raw_mood: rawMood, country: targetCountry, language: language
       });
@@ -132,7 +133,7 @@ export default function Home() {
           </section>
         )}
 
-        {movies.length === 0 && (
+        {(!hasSearched || movies.length === 0) && (
           <section className="mt-6 border-t border-slate-900 pt-10">
             {randomThemes.map((theme) => (
               <MovieRow 
