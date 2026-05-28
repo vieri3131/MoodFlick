@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function AuthModal({ isOpen, onClose, language }) {
   // 'login' 또는 'signup' 상태 관리
@@ -9,6 +10,7 @@ const [email, setEmail] = useState('');
 const [password, setPassword] = useState('');
 const [confirmPassword, setConfirmPassword] = useState('');
 const [nickname, setNickname] = useState('');
+const [error, setError] = useState('');
 
   // 다국어 텍스트 매핑
 // 다국어 텍스트 매핑
@@ -39,28 +41,50 @@ const text = UI_TEXT[language] || UI_TEXT['ko-KR'];
 
   // 모달이 닫히면 입력값 초기화
 useEffect(() => {
+    setError('');
     if (!isOpen) {
     setEmail('');
     setPassword('');
     setConfirmPassword('');
     setNickname('');
     }
-}, [isOpen]);
+}, [isOpen, activeTab]);
 
 if (!isOpen) return null;
 
-const handleSubmit = (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     if (activeTab === 'login') {
-    alert(`${email}님, 로그인이 시뮬레이션 되었습니다. (곧 DB 연동 예정!)`);
+      try {
+        setError('')
+        const response = await axios.post('http://localhost:8000/auth/login', {
+          email,
+          password
+        })
+        localStorage.setItem('token', response.data.token)
+        localStorage.setItem('nickname', response.data.nickname)
+        onClose()
+        window.location.reload()
+      } catch (err) {
+        setError(err.response?.data?.detail || '로그인에 실패했습니다.')
+      }
     } else {
-    if (password !== confirmPassword) {
-        alert('비밀번호가 일치하지 않습니다.');
-        return;
+      try {
+        setError('')
+        const response = await axios.post('http://localhost:8000/auth/register', {
+          nickname,
+          email,
+          password,
+          confirm_password: confirmPassword
+        })
+        localStorage.setItem('token', response.data.token)
+        localStorage.setItem('nickname', response.data.nickname)
+        onClose()
+        window.location.reload()
+      } catch (err) {
+        setError(err.response?.data?.detail || '회원가입에 실패했습니다.')
+      }
     }
-    alert(`${nickname}님, 회원가입이 시뮬레이션 되었습니다.`);
-    }
-    onClose();
 };
 
 return (
@@ -144,8 +168,14 @@ return (
             </div>
         )}
 
+          {error && (
+            <p style={{ color: 'red', fontSize: '0.85rem', marginBottom: '8px' }}>
+              {error}
+            </p>
+          )}
+
           {/* 제출 버튼 (그라데이션 효과) */}
-        <button 
+        <button
             type="submit"
             className="w-full py-4 mt-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-purple-500/20 active:scale-[0.99]"
         >
