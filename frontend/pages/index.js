@@ -37,6 +37,15 @@ export default function Home() {
   const [randomThemes, setRandomThemes] = useState([]);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null)
+
+  useEffect(() => {
+    const nickname = localStorage.getItem('nickname')
+    const token = localStorage.getItem('token')
+    if (nickname && token) {
+      setCurrentUser(nickname)
+    }
+  }, [])
 
   useEffect(() => {
     const fetchRandomThemes = async () => {
@@ -94,12 +103,30 @@ export default function Home() {
         <div className="relative z-10 w-full max-w-3xl text-center px-6">
           <div className="absolute -top-12 right-0 z-50 flex items-center gap-3">
             <SearchBar language={language} onSearch={handleDirectSearch} />
-            <button
-              onClick={() => setIsAuthModalOpen(true)}
-              className="px-5 py-2 h-10 bg-purple-600 hover:bg-purple-500 font-bold text-sm text-white rounded-full transition-all shadow-lg active:scale-95"
-            >
-              {text.loginBtn}
-            </button>
+            {currentUser ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: 'white', fontWeight: 'bold' }}>
+                  👤 {currentUser}
+                </span>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('token')
+                    localStorage.removeItem('nickname')
+                    setCurrentUser(null)
+                  }}
+                  className="px-5 py-2 h-10 bg-slate-700 hover:bg-slate-600 font-bold text-sm text-white rounded-full transition-all shadow-lg active:scale-95"
+                >
+                  로그아웃
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="px-5 py-2 h-10 bg-purple-600 hover:bg-purple-500 font-bold text-sm text-white rounded-full transition-all shadow-lg active:scale-95"
+              >
+                {text.loginBtn}
+              </button>
+            )}
             <LanguageToggle language={language} setLanguage={setLanguage} />
           </div>
 
