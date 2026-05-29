@@ -109,6 +109,13 @@ export default function Home() {
 
   const text = PAGE_TEXT[language] || PAGE_TEXT['ko-KR'];
 
+  const sectionTitle = {
+    'ko-KR': hasSearched ? '🔍 검색 결과' : '✨ AI 맞춤 추천',
+    'en-US': hasSearched ? '🔍 Search Results' : '✨ AI Recommendations',
+    'ja-JP': hasSearched ? '🔍 検索結果' : '✨ AI おすすめ',
+    'zh-CN': hasSearched ? '🔍 搜索结果' : '✨ AI 推荐',
+  }[language] || (hasSearched ? '🔍 Search Results' : '✨ AI Recommendations')
+
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-purple-500/30">
       <header className="relative w-full py-20 flex flex-col items-center justify-center overflow-hidden mb-6 shadow-2xl">
@@ -164,7 +171,7 @@ export default function Home() {
         {movies.length > 0 && (
           <section className="mb-16">
             <h2 className="text-2xl font-extrabold text-purple-400 mb-6 px-2 flex items-center gap-2">
-              {text.aiTitle}
+              {sectionTitle}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {movies.map((movie, index) => (
