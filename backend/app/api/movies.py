@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query
-from app.services.tmdb_service import discover_movies
+from app.services.tmdb_service import discover_movies, search_movies
 
 router = APIRouter(prefix="/api", tags=["recommend"])
 
@@ -18,6 +18,18 @@ def get_movies(
         min_rating=min_rating,
     )
 
+    return {
+        "count": len(movies),
+        "movies": movies
+    }
+
+
+@router.get("/movies/search")
+def search_movies_endpoint(
+    query: str = Query(..., min_length=1),
+    language: str = Query(default="ko-KR"),
+):
+    movies = search_movies(query=query, language=language)
     return {
         "count": len(movies),
         "movies": movies

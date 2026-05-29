@@ -89,9 +89,23 @@ export default function Home() {
     }
   };
 
-  const handleDirectSearch = (keyword) => {
-    alert(`[${keyword}] 검색 기능은 다음 단계에서 DB 연결 후 구현됩니다!`);
-  };
+  const handleDirectSearch = async (keyword) => {
+    if (!keyword.trim()) return
+    try {
+      const response = await axios.get(
+        'http://localhost:8000/api/movies/search',
+        { params: {
+            query: keyword,
+            language: language
+          }
+        }
+      )
+      setMovies(response.data.movies)
+      setHasSearched(true)
+    } catch (err) {
+      console.error('Search failed:', err)
+    }
+  }
 
   const text = PAGE_TEXT[language] || PAGE_TEXT['ko-KR'];
 

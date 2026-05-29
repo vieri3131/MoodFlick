@@ -52,6 +52,20 @@ def discover_movies(
     return [format_movie(movie) for movie in movies]
 
 
+def search_movies(query: str, language: str = "ko-KR"):
+    params = {
+        "api_key": TMDB_API_KEY,
+        "query": query,
+        "language": language,
+        "include_adult": False,
+        "page": 1,
+    }
+    response = requests.get(f"{TMDB_BASE_URL}/search/movie", params=params)
+    response.raise_for_status()
+    results = response.json().get("results", [])
+    return [format_movie(m) for m in results if m.get("poster_path")]
+
+
 def format_movie(movie: dict):
     """
     TMDB 응답 데이터를 프론트엔드에서 사용하기 쉬운 형태로 변환한다.
