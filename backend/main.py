@@ -9,6 +9,7 @@ load_dotenv()
 from app.api.movies import router as movies_router
 from app.api.recommend import router as recommend_router
 from app.api.auth import router as auth_router
+from app.api.watchlist import router as watchlist_router
 
 app = FastAPI()
 
@@ -33,7 +34,8 @@ app.include_router(movies_router, prefix="/api")
 app.include_router(recommend_router, prefix="/api")
 
 # 프론트엔드 코드(auth.js)에서 /auth/register 로 요청을 보내고 있다면 아래와 같이 prefix 설정
-app.include_router(auth_router, prefix="/auth") 
+app.include_router(auth_router, prefix="/auth")
+app.include_router(watchlist_router, prefix="/api")
 
 
 @app.get("/")
