@@ -70,8 +70,8 @@ def format_movie(movie: dict):
     """
     TMDB 응답 데이터를 프론트엔드에서 사용하기 쉬운 형태로 변환한다.
     """
-
     poster_path = movie.get("poster_path")
+    backdrop_path = movie.get("backdrop_path") # 👈 추가됨
 
     return {
         "tmdbId": movie.get("id"),
@@ -79,6 +79,8 @@ def format_movie(movie: dict):
         "originalTitle": movie.get("original_title"),
         "overview": movie.get("overview"),
         "posterUrl": f"{TMDB_IMAGE_BASE_URL}{poster_path}" if poster_path else None,
+        # 👇 추가됨: 모달 배경용 고화질 원본 이미지
+        "backdropUrl": f"https://image.tmdb.org/t/p/original{backdrop_path}" if backdrop_path else None, 
         "rating": movie.get("vote_average"),
         "releaseDate": movie.get("release_date"),
     }
