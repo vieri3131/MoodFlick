@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 import MovieModal from './MovieModal';
-import SearchBar from './SearchBar';
 import LanguageToggle from './LanguageToggle';
 import { API_URL, getAuthHeaders, getAuthToken } from '../lib/api';
 
@@ -78,12 +77,6 @@ export default function UserLibraryPage({ type, language = 'ko-KR' }) {
     fetchItems();
   }, [config.endpoint, activeLanguage]);
 
-  const handleSearch = (keyword) => {
-    if (!keyword.trim()) return;
-    sessionStorage.setItem('pendingMovieSearch', keyword.trim());
-    router.push('/');
-  };
-
   const handleRemove = async (movieId) => {
     try {
       await axios.delete(`${API_URL}${config.endpoint}/${movieId}`, {
@@ -110,7 +103,6 @@ export default function UserLibraryPage({ type, language = 'ko-KR' }) {
           </Link>
 
           <div className="ml-auto flex items-center gap-3 transition-all duration-300">
-            <SearchBar language={activeLanguage} onSearch={handleSearch} />
             {currentUser && (
               <span style={{ color: 'white', fontWeight: 'bold' }}>
                 👤 {currentUser}
