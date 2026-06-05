@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import axios from 'axios';
+import MovieCard from './MovieCard';
 import MovieModal from './MovieModal';
 import LanguageToggle from './LanguageToggle';
 import { API_URL, getAuthHeaders, getAuthToken } from '../lib/api';
@@ -167,36 +168,21 @@ export default function UserLibraryPage({ type, language = 'ko-KR' }) {
         )}
 
         {!loading && !error && items.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {items.map((item) => {
               const movie = toMovie(item);
               return (
                 <article key={item.id || item.movie_id} className="group">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedMovie(movie)}
-                    className="block w-full text-left rounded-lg overflow-hidden bg-slate-900 border border-white/10 hover:border-purple-500/60 transition-all"
-                  >
-                    <div className="aspect-[2/3] bg-slate-800">
-                      <img
-                        src={movie.posterUrl || '/placeholder-poster.png'}
-                        alt={movie.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                    <div className="p-3">
-                      <h2 className="font-bold text-sm truncate">{movie.title}</h2>
-                      {item[config.dateField] && (
-                        <p className="text-xs text-slate-500 mt-1">
-                          {new Date(item[config.dateField]).toLocaleDateString()}
-                        </p>
-                      )}
-                    </div>
-                  </button>
+                  <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
+                  {item[config.dateField] && (
+                    <p className="mt-3 text-xs text-slate-500 px-1">
+                      {new Date(item[config.dateField]).toLocaleDateString()}
+                    </p>
+                  )}
                   <button
                     type="button"
                     onClick={() => handleRemove(item.movie_id)}
-                    className="mt-2 w-full py-2 rounded-md bg-white/5 hover:bg-red-500/20 text-xs font-bold text-slate-300 hover:text-red-100 transition-colors"
+                    className="mt-2 w-full py-2.5 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-400/30 text-xs font-bold text-slate-300 hover:text-red-100 transition-colors"
                   >
                     {config.remove[activeLanguage] || config.remove['en-US']}
                   </button>
