@@ -9,10 +9,50 @@ ALLOWED_EMOTIONS = [
     "calm", "lonely", "angry", "tired", "bored"
 ]
 
+LANGUAGE_MAP = {
+    "ko": "Korean",
+    "en": "English",
+    "ja": "Japanese",
+    "zh": "Chinese",
+}
+
+FALLBACK_REASONS = {
+    "ko": "이 영화가 지금 당신의 감정에 잘 어울립니다.",
+    "en": "This film suits your current mood well.",
+    "ja": "この映画は今のあなたの気持ちにぴったりです。",
+    "zh": "这部电影非常适合您目前的心情。",
+}
+
+_groq_client = None
+
+
+def _get_client() -> Groq:
+    global _groq_client
+    if _groq_client is None:
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise RuntimeError("GROQ_API_KEY가 설정되어 있지 않습니다.")
+        _groq_client = Groq(api_key=api_key)
+    return _groq_client
+
+
+def _get_language_instruction(language: str) -> str:
+    for prefix, name in LANGUAGE_MAP.items():
+        if language.startswith(prefix):
+            return name
+    return "English"
+
+
+def _get_fallback_reason(language: str) -> str:
+    for prefix, reason in FALLBACK_REASONS.items():
+        if language.startswith(prefix):
+            return reason
+    return FALLBACK_REASONS["en"]
+
 
 def parse_mood(raw_mood: str) -> str:
     try:
-        client = Groq(api_key=os.getenv("GROQ_API_KEY"))  # ← moved here
+        client = _get_client()
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -42,7 +82,7 @@ Your response must be a single word only.
         )
 
         result = response.choices[0].message.content.strip().lower()
-        print(f"Groq output: '{result}'")
+        print(f"Groq mood output: '{result}'")
 
         if result not in ALLOWED_EMOTIONS:
             print(f"Not in list, defaulting to calm")
@@ -51,15 +91,16 @@ Your response must be a single word only.
         return result
 
     except Exception as e:
-        print(f"Groq error: {e}")
+        print(f"Groq error in parse_mood: {e}")
         return "calm"
 
 
 def generate_reason(raw_mood: str, movie_title: str, language: str) -> str:
-    lang_instruction = "Korean" if language.startswith("ko") else "English"
+    lang_instruction = _get_language_instruction(language)
+    fallback = _get_fallback_reason(language)
 
     try:
-        client = Groq(api_key=os.getenv("GROQ_API_KEY"))  # ← moved here
+        client = _get_client()
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -86,5 +127,6 @@ Rules:
 
         return response.choices[0].message.content.strip()
 
-    except Exception:
-        return "이 영화가 지금 당신의 감정에 잘 어울립니다." if language.startswith("ko") else "This film suits your current mood well."
+    except Exception as e:
+        print(f"Groq error in generate_reason: {e}")
+        return fallback
