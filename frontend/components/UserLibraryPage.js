@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import axios from 'axios';
 import MovieModal from './MovieModal';
+import SearchBar from './SearchBar';
+import LanguageToggle from './LanguageToggle';
 import { API_URL, getAuthHeaders, getAuthToken } from '../lib/api';
 
 const TEXT = {
@@ -32,16 +35,27 @@ function toMovie(item) {
 }
 
 export default function UserLibraryPage({ type, language = 'ko-KR' }) {
+  const router = useRouter();
   const config = TEXT[type];
+  const [activeLanguage, setActiveLanguage] = useState(language);
+  const [currentUser, setCurrentUser] = useState(null);
   const [items, setItems] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const nickname = localStorage.getItem('nickname');
+    const token = localStorage.getItem('token');
+    if (nickname && token) {
+      setCurrentUser(nickname);
+    }
+  }, []);
+
+  useEffect(() => {
     const fetchItems = async () => {
       if (!getAuthToken()) {
-        setError(language === 'ko-KR' ? '로그인이 필요한 페이지입니다.' : 'Please sign in to view this page.');
+        setError(activeLanguage === 'ko-KR' ? '로그인이 필요한 페이지입니다.' : 'Please sign in to view this page.');
         setLoading(false);
         return;
       }
@@ -54,7 +68,7 @@ export default function UserLibraryPage({ type, language = 'ko-KR' }) {
       } catch (err) {
         setError(
           err.response?.data?.detail ||
-            (language === 'ko-KR' ? '목록을 불러오지 못했습니다.' : 'Could not load this list.')
+            (activeLanguage === 'ko-KR' ? '목록을 불러오지 못했습니다.' : 'Could not load this list.')
         );
       } finally {
         setLoading(false);
@@ -62,7 +76,13 @@ export default function UserLibraryPage({ type, language = 'ko-KR' }) {
     };
 
     fetchItems();
-  }, [config.endpoint, language]);
+  }, [config.endpoint, activeLanguage]);
+
+  const handleSearch = (keyword) => {
+    if (!keyword.trim()) return;
+    sessionStorage.setItem('pendingMovieSearch', keyword.trim());
+    router.push('/');
+  };
 
   const handleRemove = async (movieId) => {
     try {
@@ -73,46 +93,84 @@ export default function UserLibraryPage({ type, language = 'ko-KR' }) {
     } catch (err) {
       alert(
         err.response?.data?.detail ||
-          (language === 'ko-KR' ? '삭제하지 못했습니다.' : 'Could not remove this movie.')
+          (activeLanguage === 'ko-KR' ? '삭제하지 못했습니다.' : 'Could not remove this movie.')
       );
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <header className="border-b border-white/10 bg-slate-950/95 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex flex-wrap items-center justify-between gap-4">
-          <Link href="/" className="text-3xl font-black tracking-tight">
+      <nav className="fixed top-0 left-0 right-0 z-[80] bg-slate-950/80 backdrop-blur-xl border-b border-white/10 shadow-2xl shadow-black/30 transition-all duration-300">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center">
+          <Link
+            href="/"
+            className="absolute left-4 sm:left-6 text-2xl sm:text-3xl font-black tracking-tight drop-shadow-2xl transition-all duration-300"
+          >
             Mood<span className="text-purple-500">Flick</span>
           </Link>
-          <nav className="flex items-center gap-3 text-sm font-bold">
-            <Link href="/favorites" className={`px-4 py-2 rounded-full border ${type === 'favorites' ? 'bg-purple-600 border-purple-500 text-white' : 'border-white/10 text-slate-300 hover:text-white hover:border-white/30'}`}>
-              {TEXT.favorites.title[language] || TEXT.favorites.title['en-US']}
-            </Link>
-            <Link href="/watched" className={`px-4 py-2 rounded-full border ${type === 'watched' ? 'bg-purple-600 border-purple-500 text-white' : 'border-white/10 text-slate-300 hover:text-white hover:border-white/30'}`}>
-              {TEXT.watched.title[language] || TEXT.watched.title['en-US']}
-            </Link>
-          </nav>
-        </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-10">
+          <div className="ml-auto flex items-center gap-3 transition-all duration-300">
+            <SearchBar language={activeLanguage} onSearch={handleSearch} />
+            {currentUser && (
+              <span style={{ color: 'white', fontWeight: 'bold' }}>
+                👤 {currentUser}
+              </span>
+            )}
+            <Link
+              href="/favorites"
+              className={`px-4 py-2 h-10 border font-bold text-sm text-white rounded-full transition-all shadow-lg flex items-center ${
+                type === 'favorites'
+                  ? 'bg-purple-600 hover:bg-purple-500 border-transparent'
+                  : 'bg-white/10 hover:bg-white/20 border-white/10'
+              }`}
+            >
+              찜한 콘텐츠
+            </Link>
+            <Link
+              href="/watched"
+              className={`px-4 py-2 h-10 border font-bold text-sm text-white rounded-full transition-all shadow-lg flex items-center ${
+                type === 'watched'
+                  ? 'bg-purple-600 hover:bg-purple-500 border-transparent'
+                  : 'bg-white/10 hover:bg-white/20 border-white/10'
+              }`}
+            >
+              본 영화
+            </Link>
+            {currentUser && (
+              <button
+                onClick={() => {
+                  localStorage.removeItem('token');
+                  localStorage.removeItem('nickname');
+                  setCurrentUser(null);
+                  router.push('/');
+                }}
+                className="px-5 py-2 h-10 bg-slate-700 hover:bg-slate-600 font-bold text-sm text-white rounded-full transition-all shadow-lg active:scale-95"
+              >
+                로그아웃
+              </button>
+            )}
+            <LanguageToggle language={activeLanguage} setLanguage={setActiveLanguage} />
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-7xl mx-auto px-6 pt-28 pb-10">
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-black">
-            {config.title[language] || config.title['en-US']}
+            {config.title[activeLanguage] || config.title['en-US']}
           </h1>
           <p className="mt-2 text-slate-400">
-            {language === 'ko-KR'
+            {activeLanguage === 'ko-KR'
               ? '영화 상세 화면에서 추가한 콘텐츠가 여기에 모입니다.'
               : 'Movies added from the detail modal appear here.'}
           </p>
         </div>
 
-        {loading && <p className="text-slate-400">{language === 'ko-KR' ? '불러오는 중...' : 'Loading...'}</p>}
+        {loading && <p className="text-slate-400">{activeLanguage === 'ko-KR' ? '불러오는 중...' : 'Loading...'}</p>}
         {!loading && error && <p className="text-red-300">{error}</p>}
         {!loading && !error && items.length === 0 && (
           <div className="border border-white/10 bg-slate-900/70 rounded-xl p-8 text-slate-300">
-            {config.empty[language] || config.empty['en-US']}
+            {config.empty[activeLanguage] || config.empty['en-US']}
           </div>
         )}
 
@@ -148,7 +206,7 @@ export default function UserLibraryPage({ type, language = 'ko-KR' }) {
                     onClick={() => handleRemove(item.movie_id)}
                     className="mt-2 w-full py-2 rounded-md bg-white/5 hover:bg-red-500/20 text-xs font-bold text-slate-300 hover:text-red-100 transition-colors"
                   >
-                    {config.remove[language] || config.remove['en-US']}
+                    {config.remove[activeLanguage] || config.remove['en-US']}
                   </button>
                 </article>
               );
@@ -161,7 +219,7 @@ export default function UserLibraryPage({ type, language = 'ko-KR' }) {
         <MovieModal
           movie={selectedMovie}
           onClose={() => setSelectedMovie(null)}
-          language={language}
+          language={activeLanguage}
         />
       )}
     </div>
