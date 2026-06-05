@@ -11,9 +11,9 @@ const TEXT = {
     serverError: '서버와 통신하는 중 오류가 발생했습니다.',
     trailerComingSoon: '트레일러 재생 기능은 향후 업데이트 예정입니다!',
     play: '재생',
-    favoriteTitle: '내가 찜한 콘텐츠',
+    watchlistTitle: '관심 목록',
     watchedTitle: '이미 본 영화',
-    favoriteAdded: '✨ 관심 목록에 추가되었습니다!',
+    watchlistAdded: '✨ 관심 목록에 추가되었습니다!',
     watchedAdded: '✔️ 시청 기록에 추가되었습니다!',
     match: '98% 일치',
     noOverview: '상세 줄거리가 제공되지 않습니다.',
@@ -27,9 +27,9 @@ const TEXT = {
     serverError: 'An error occurred while contacting the server.',
     trailerComingSoon: 'Trailer playback is planned for a future update.',
     play: 'Play',
-    favoriteTitle: 'My Favorites',
+    watchlistTitle: 'Watchlist',
     watchedTitle: 'Watched Movies',
-    favoriteAdded: '✨ Added to favorites!',
+    watchlistAdded: '✨ Added to your watchlist!',
     watchedAdded: '✔️ Added to watched history!',
     match: '98% Match',
     noOverview: 'No overview is available.',
@@ -43,9 +43,9 @@ const TEXT = {
     serverError: 'サーバーとの通信中にエラーが発生しました。',
     trailerComingSoon: '予告編再生機能は今後のアップデートで追加予定です。',
     play: '再生',
-    favoriteTitle: 'お気に入り',
+    watchlistTitle: 'ウォッチリスト',
     watchedTitle: '視聴済み',
-    favoriteAdded: '✨ お気に入りに追加しました！',
+    watchlistAdded: '✨ ウォッチリストに追加しました！',
     watchedAdded: '✔️ 視聴履歴に追加しました！',
     match: '98% 一致',
     noOverview: 'あらすじは提供されていません。',
@@ -59,9 +59,9 @@ const TEXT = {
     serverError: '与服务器通信时发生错误。',
     trailerComingSoon: '预告片播放功能将在后续更新中推出。',
     play: '播放',
-    favoriteTitle: '我的收藏',
+    watchlistTitle: '观看清单',
     watchedTitle: '已观看电影',
-    favoriteAdded: '✨ 已添加到收藏！',
+    watchlistAdded: '✨ 已添加到观看清单！',
     watchedAdded: '✔️ 已添加到观看记录！',
     match: '98% 匹配',
     noOverview: '暂无详细剧情。',
@@ -108,7 +108,7 @@ export default function MovieModal({ movie, onClose, language }) {
         `${successMessage}\n\n${text.openList}`
       );
       if (shouldOpenList) {
-        router.push(endpoint === '/api/watchlist' ? '/favorites' : '/watched');
+        router.push(endpoint === '/api/watchlist' ? '/watchlist' : '/watched');
       }
     } catch (error) {
       // 백엔드에서 409(Conflict - 중복) 에러를 보냈을 경우 처리
@@ -168,9 +168,9 @@ export default function MovieModal({ movie, onClose, language }) {
                 {/* 2. 관심 목록 (Wishlist) 추가 버튼 */}
                 <button 
                   // 👇 onClick에 백엔드 API 연결
-                  onClick={() => handleAddToList('/api/watchlist', text.favoriteAdded)}
+                  onClick={() => handleAddToList('/api/watchlist', text.watchlistAdded)}
                   className="p-2 border-2 border-white/50 hover:border-white rounded-full bg-[#2a2a2a]/60 text-white transition-all active:scale-95 group" 
-                  title={text.favoriteTitle}
+                  title={text.watchlistTitle}
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

@@ -28,10 +28,10 @@ const EMOTION_THEMES = [
 ];
 
 const PAGE_TEXT = {
-  'ko-KR': { desc: '당신의 오늘 감정을 읽고 딱 맞는 영화를 찾아드려요.', aiTitle: '✨ AI 분석 맞춤 추천 영화', err: '서버와 통신할 수 없습니다.', loginBtn: '로그인', favorites: '찜한 콘텐츠', watched: '본 영화', logout: '로그아웃', footer: 'AI 기반 감정 영화 큐레이터' },
-  'en-US': { desc: 'Tell us your mood, and we will find the perfect movie for you.', aiTitle: '✨ AI Analysed Recommendations', err: 'Connection failed.', loginBtn: 'Sign In', favorites: 'My Favorites', watched: 'Watched', logout: 'Log Out', footer: 'AI-Powered Emotional Movie Curator' },
-  'ja-JP': { desc: '今日の気分を教えてください。ぴったりの映画を見つけます。', aiTitle: '✨ AI分析 カスタマイズ推薦映画', err: 'サーバーと通信できません。', loginBtn: 'ログイン', favorites: 'お気に入り', watched: '視聴済み', logout: 'ログアウト', footer: 'AI感情映画キュレーター' },
-  'zh-CN': { desc: '告诉我们您今天的心情，我们会为您找到完美的电影。', aiTitle: '✨ AI分析 专属推荐电影', err: '无法连接到服务器。', loginBtn: '登录', favorites: '我的收藏', watched: '已观看', logout: '退出登录', footer: 'AI 情绪电影推荐器' }
+  'ko-KR': { desc: '당신의 오늘 감정을 읽고 딱 맞는 영화를 찾아드려요.', aiTitle: '✨ AI 분석 맞춤 추천 영화', err: '서버와 통신할 수 없습니다.', loginBtn: '로그인', watchlist: '관심 목록', watched: '본 영화', logout: '로그아웃', footer: 'AI 기반 감정 영화 큐레이터' },
+  'en-US': { desc: 'Tell us your mood, and we will find the perfect movie for you.', aiTitle: '✨ AI Analysed Recommendations', err: 'Connection failed.', loginBtn: 'Sign In', watchlist: 'Watchlist', watched: 'Watched', logout: 'Log Out', footer: 'AI-Powered Emotional Movie Curator' },
+  'ja-JP': { desc: '今日の気分を教えてください。ぴったりの映画を見つけます。', aiTitle: '✨ AI分析 カスタマイズ推薦映画', err: 'サーバーと通信できません。', loginBtn: 'ログイン', watchlist: 'ウォッチリスト', watched: '視聴済み', logout: 'ログアウト', footer: 'AI感情映画キュレーター' },
+  'zh-CN': { desc: '告诉我们您今天的心情，我们会为您找到完美的电影。', aiTitle: '✨ AI分析 专属推荐电影', err: '无法连接到服务器。', loginBtn: '登录', watchlist: '观看清单', watched: '已观看', logout: '退出登录', footer: 'AI 情绪电影推荐器' }
 };
 
 export default function Home() {
@@ -183,10 +183,10 @@ const handleDirectSearch = async (keyword) => {
                   }}
                 />
                 <Link
-                  href="/favorites"
+                  href="/watchlist"
                   className="px-4 py-2 h-10 bg-white/10 hover:bg-white/20 border border-white/10 font-bold text-sm text-white rounded-full transition-all shadow-lg flex items-center"
                 >
-                  {text.favorites}
+                  {text.watchlist}
                 </Link>
                 <Link
                   href="/watched"

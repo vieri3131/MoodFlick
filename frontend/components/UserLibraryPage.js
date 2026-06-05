@@ -10,10 +10,10 @@ import { API_URL, getAuthHeaders, getAuthToken } from '../lib/api';
 import { DEFAULT_LANGUAGE, getStoredLanguage, saveStoredLanguage } from '../lib/language';
 
 const TEXT = {
-  favorites: {
-    title: { 'ko-KR': '내가 찜한 콘텐츠', 'en-US': 'My Favorites', 'ja-JP': 'お気に入り', 'zh-CN': '我的收藏' },
-    empty: { 'ko-KR': '아직 찜한 영화가 없습니다.', 'en-US': 'No favorite movies yet.', 'ja-JP': 'お気に入りの映画はまだありません。', 'zh-CN': '还没有收藏的电影。' },
-    remove: { 'ko-KR': '찜 해제', 'en-US': 'Remove', 'ja-JP': '削除', 'zh-CN': '移除' },
+  watchlist: {
+    title: { 'ko-KR': '관심 목록', 'en-US': 'Watchlist', 'ja-JP': 'ウォッチリスト', 'zh-CN': '观看清单' },
+    empty: { 'ko-KR': '아직 관심 목록에 담은 영화가 없습니다.', 'en-US': 'No movies in your watchlist yet.', 'ja-JP': 'ウォッチリストに映画はまだありません。', 'zh-CN': '观看清单中还没有电影。' },
+    remove: { 'ko-KR': '목록에서 삭제', 'en-US': 'Remove', 'ja-JP': 'リストから削除', 'zh-CN': '从清单移除' },
     endpoint: '/api/watchlist',
     dateField: 'added_at',
   },
@@ -33,7 +33,7 @@ const PAGE_TEXT = {
     removeError: '삭제하지 못했습니다.',
     description: '영화 상세 화면에서 추가한 콘텐츠가 여기에 모입니다.',
     loading: '불러오는 중...',
-    favorites: '찜한 콘텐츠',
+    watchlist: '관심 목록',
     watched: '본 영화',
     logout: '로그아웃',
   },
@@ -43,7 +43,7 @@ const PAGE_TEXT = {
     removeError: 'Could not remove this movie.',
     description: 'Movies added from the detail modal appear here.',
     loading: 'Loading...',
-    favorites: 'My Favorites',
+    watchlist: 'Watchlist',
     watched: 'Watched',
     logout: 'Log Out',
   },
@@ -53,7 +53,7 @@ const PAGE_TEXT = {
     removeError: '削除できませんでした。',
     description: '映画詳細画面で追加した作品がここに表示されます。',
     loading: '読み込み中...',
-    favorites: 'お気に入り',
+    watchlist: 'ウォッチリスト',
     watched: '視聴済み',
     logout: 'ログアウト',
   },
@@ -63,7 +63,7 @@ const PAGE_TEXT = {
     removeError: '无法移除此电影。',
     description: '从电影详情页添加的内容会显示在这里。',
     loading: '加载中...',
-    favorites: '我的收藏',
+    watchlist: '观看清单',
     watched: '已观看',
     logout: '退出登录',
   },
@@ -169,14 +169,14 @@ export default function UserLibraryPage({ type, language = DEFAULT_LANGUAGE }) {
               />
             )}
             <Link
-              href="/favorites"
+              href="/watchlist"
               className={`px-4 py-2 h-10 border font-bold text-sm text-white rounded-full transition-all shadow-lg flex items-center ${
-                type === 'favorites'
+                type === 'watchlist'
                   ? 'bg-purple-600 hover:bg-purple-500 border-transparent'
                   : 'bg-white/10 hover:bg-white/20 border-white/10'
               }`}
             >
-              {text.favorites}
+              {text.watchlist}
             </Link>
             <Link
               href="/watched"
