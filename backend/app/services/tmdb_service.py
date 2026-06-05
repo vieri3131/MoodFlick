@@ -92,3 +92,37 @@ def format_movie(movie: dict):
         "rating": movie.get("vote_average"),
         "releaseDate": movie.get("release_date"),
     }
+
+
+def get_movie_by_id(movie_id: int, language: str = "ko-KR") -> dict | None:
+    if not TMDB_API_KEY:
+        raise RuntimeError("TMDB_API_KEY가 설정되어 있지 않습니다.")
+
+    try:
+        response = requests.get(
+            f"{TMDB_BASE_URL}/movie/{movie_id}",
+            params={
+                "api_key": TMDB_API_KEY,
+                "language": language,
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+        movie = response.json()
+
+        if not movie.get("overview", "").strip() and not language.startswith("en"):
+            fallback = requests.get(
+                f"{TMDB_BASE_URL}/movie/{movie_id}",
+                params={
+                    "api_key": TMDB_API_KEY,
+                    "language": "en-US",
+                },
+                timeout=10,
+            )
+            fallback.raise_for_status()
+            fallback_data = fallback.json()
+            movie["overview"] = fallback_data.get("overview", "")
+
+        return format_movie(movie)
+    except Exception:
+        return None

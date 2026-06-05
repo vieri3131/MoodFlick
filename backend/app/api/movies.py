@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query
-from app.services.tmdb_service import discover_movies, search_movies
+from app.services.tmdb_service import discover_movies, search_movies, get_movie_by_id
 
 router = APIRouter(tags=["recommend"])
 
@@ -34,3 +34,15 @@ def search_movies_endpoint(
         "count": len(movies),
         "movies": movies
     }
+
+
+@router.get("/movies/{movie_id}")
+def get_movie_detail(
+    movie_id: int,
+    language: str = Query(default="ko-KR"),
+):
+    from fastapi import HTTPException
+    movie = get_movie_by_id(movie_id=movie_id, language=language)
+    if not movie:
+        raise HTTPException(status_code=404, detail="Movie not found")
+    return movie
