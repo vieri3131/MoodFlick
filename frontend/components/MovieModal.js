@@ -3,8 +3,76 @@ import { useRouter } from 'next/router';
 import axios from 'axios'; // 👈 API 통신을 위해 axios 추가
 import { API_URL, getAuthHeaders, getAuthToken } from '../lib/api';
 
+const TEXT = {
+  'ko-KR': {
+    loginRequired: '로그인이 필요한 기능입니다.',
+    openList: '목록 페이지로 이동할까요?',
+    duplicate: '이미 목록에 추가된 영화입니다.',
+    serverError: '서버와 통신하는 중 오류가 발생했습니다.',
+    trailerComingSoon: '트레일러 재생 기능은 향후 업데이트 예정입니다!',
+    play: '재생',
+    favoriteTitle: '내가 찜한 콘텐츠',
+    watchedTitle: '이미 본 영화',
+    favoriteAdded: '✨ 관심 목록에 추가되었습니다!',
+    watchedAdded: '✔️ 시청 기록에 추가되었습니다!',
+    match: '98% 일치',
+    noOverview: '상세 줄거리가 제공되지 않습니다.',
+    aiReason: '✨ AI 추천 사유:',
+    originalTitle: '원제:',
+  },
+  'en-US': {
+    loginRequired: 'Please sign in to use this feature.',
+    openList: 'Open the list page now?',
+    duplicate: 'This movie is already in your list.',
+    serverError: 'An error occurred while contacting the server.',
+    trailerComingSoon: 'Trailer playback is planned for a future update.',
+    play: 'Play',
+    favoriteTitle: 'My Favorites',
+    watchedTitle: 'Watched Movies',
+    favoriteAdded: '✨ Added to favorites!',
+    watchedAdded: '✔️ Added to watched history!',
+    match: '98% Match',
+    noOverview: 'No overview is available.',
+    aiReason: '✨ AI recommendation reason:',
+    originalTitle: 'Original title:',
+  },
+  'ja-JP': {
+    loginRequired: 'この機能を使うにはログインが必要です。',
+    openList: 'リストページに移動しますか？',
+    duplicate: 'この映画はすでにリストに追加されています。',
+    serverError: 'サーバーとの通信中にエラーが発生しました。',
+    trailerComingSoon: '予告編再生機能は今後のアップデートで追加予定です。',
+    play: '再生',
+    favoriteTitle: 'お気に入り',
+    watchedTitle: '視聴済み',
+    favoriteAdded: '✨ お気に入りに追加しました！',
+    watchedAdded: '✔️ 視聴履歴に追加しました！',
+    match: '98% 一致',
+    noOverview: 'あらすじは提供されていません。',
+    aiReason: '✨ AIおすすめ理由:',
+    originalTitle: '原題:',
+  },
+  'zh-CN': {
+    loginRequired: '请先登录后再使用此功能。',
+    openList: '现在打开列表页面吗？',
+    duplicate: '这部电影已添加到列表中。',
+    serverError: '与服务器通信时发生错误。',
+    trailerComingSoon: '预告片播放功能将在后续更新中推出。',
+    play: '播放',
+    favoriteTitle: '我的收藏',
+    watchedTitle: '已观看电影',
+    favoriteAdded: '✨ 已添加到收藏！',
+    watchedAdded: '✔️ 已添加到观看记录！',
+    match: '98% 匹配',
+    noOverview: '暂无详细剧情。',
+    aiReason: '✨ AI 推荐理由:',
+    originalTitle: '原标题:',
+  },
+};
+
 export default function MovieModal({ movie, onClose, language }) {
   const router = useRouter();
+  const text = TEXT[language] || TEXT['ko-KR'];
 
   // 모달이 열리면 배경(body) 스크롤 방지
   useEffect(() => {
@@ -22,7 +90,7 @@ export default function MovieModal({ movie, onClose, language }) {
     // 1. 로컬 스토리지에서 로그인 토큰 꺼내기
     const token = getAuthToken();
     if (!token) {
-      alert('로그인이 필요한 기능입니다.');
+      alert(text.loginRequired);
       return;
     }
 
@@ -37,9 +105,7 @@ export default function MovieModal({ movie, onClose, language }) {
       });
       
       const shouldOpenList = window.confirm(
-        `${successMessage}\n\n${
-          language === 'ko-KR' ? '목록 페이지로 이동할까요?' : 'Open the list page now?'
-        }`
+        `${successMessage}\n\n${text.openList}`
       );
       if (shouldOpenList) {
         router.push(endpoint === '/api/watchlist' ? '/favorites' : '/watched');
@@ -47,10 +113,10 @@ export default function MovieModal({ movie, onClose, language }) {
     } catch (error) {
       // 백엔드에서 409(Conflict - 중복) 에러를 보냈을 경우 처리
       if (error.response && error.response.status === 409) {
-        alert('이미 목록에 추가된 영화입니다.');
+        alert(text.duplicate);
       } else {
         console.error('API 에러:', error);
-        alert('서버와 통신하는 중 오류가 발생했습니다.');
+        alert(text.serverError);
       }
     }
   };
@@ -92,19 +158,19 @@ export default function MovieModal({ movie, onClose, language }) {
               <div className="flex items-center gap-3">
                 {/* 1. 재생 (트레일러) 버튼 */}
                 <button 
-                  onClick={() => alert('트레일러 재생 기능은 향후 업데이트 예정입니다!')}
+                  onClick={() => alert(text.trailerComingSoon)}
                   className="flex items-center gap-2 bg-white text-black px-4 sm:px-6 py-2 rounded-md font-bold text-base sm:text-lg hover:bg-white/80 transition-all active:scale-95"
                 >
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                  재생
+                  {text.play}
                 </button>
                 
                 {/* 2. 관심 목록 (Wishlist) 추가 버튼 */}
                 <button 
                   // 👇 onClick에 백엔드 API 연결
-                  onClick={() => handleAddToList('/api/watchlist', '✨ 관심 목록에 추가되었습니다!')}
+                  onClick={() => handleAddToList('/api/watchlist', text.favoriteAdded)}
                   className="p-2 border-2 border-white/50 hover:border-white rounded-full bg-[#2a2a2a]/60 text-white transition-all active:scale-95 group" 
-                  title="내가 찜한 콘텐츠"
+                  title={text.favoriteTitle}
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -114,9 +180,9 @@ export default function MovieModal({ movie, onClose, language }) {
                 {/* 3. 시청 기록 (Watched) 체크 버튼 */}
                 <button 
                   // 👇 onClick에 백엔드 API 연결
-                  onClick={() => handleAddToList('/api/watch-history', '✔️ 시청 기록에 추가되었습니다!')}
+                  onClick={() => handleAddToList('/api/watch-history', text.watchedAdded)}
                   className="p-2 border-2 border-white/50 hover:border-white rounded-full bg-[#2a2a2a]/60 text-white transition-all active:scale-95" 
-                  title="이미 본 영화"
+                  title={text.watchedTitle}
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -130,7 +196,7 @@ export default function MovieModal({ movie, onClose, language }) {
         <div className="p-6 sm:p-10 grid grid-cols-1 md:grid-cols-3 gap-8 text-white">
            <div className="col-span-2 space-y-5">
               <div className="flex items-center gap-3 sm:gap-4 text-sm sm:text-base font-semibold flex-wrap">
-                 <span className="text-green-500">98% 일치</span>
+                 <span className="text-green-500">{text.match}</span>
                  <span>{movie.releaseDate?.substring(0, 4)}</span>
                  <span className="border border-white/40 px-1.5 py-0.5 rounded text-xs text-white/70">HD</span>
                  <span className="flex items-center gap-1 text-yellow-500">
@@ -139,13 +205,13 @@ export default function MovieModal({ movie, onClose, language }) {
               </div>
               
               <p className="text-sm sm:text-base leading-relaxed text-gray-200 font-light">
-                {movie.overview || "상세 줄거리가 제공되지 않습니다."}
+                {movie.overview || text.noOverview}
               </p>
               
               {movie.recommendReason && (
                  <div className="mt-4 p-4 bg-purple-900/30 border-l-4 border-purple-500 rounded-r-lg">
                     <p className="text-sm text-purple-200">
-                      <span className="font-bold mr-2">✨ AI 추천 사유:</span> 
+                      <span className="font-bold mr-2">{text.aiReason}</span> 
                       {movie.recommendReason}
                     </p>
                  </div>
@@ -153,7 +219,7 @@ export default function MovieModal({ movie, onClose, language }) {
            </div>
 
            <div className="col-span-1 space-y-4 text-sm text-gray-400">
-              <p><span className="text-gray-500">원제:</span> <span className="text-gray-200">{movie.originalTitle}</span></p>
+              <p><span className="text-gray-500">{text.originalTitle}</span> <span className="text-gray-200">{movie.originalTitle}</span></p>
            </div>
         </div>
       </div>

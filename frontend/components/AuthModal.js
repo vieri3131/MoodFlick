@@ -19,26 +19,42 @@ const UI_TEXT = {
     'ko-KR': {
     login: '로그인', signup: '회원가입', email: '이메일 또는 아이디', password: '비밀번호',
     confirmPw: '비밀번호 확인', name: '닉네임', btnLogin: '시작하기', btnSignup: '동의하고 가입하기',
-    msg: '아직 계정이 없으신가요?', msgGoSignup: '지금 가입하세요', msgGoLogin: '이미 계정이 있으신가요?'
+    msg: '아직 계정이 없으신가요?', msgGoSignup: '지금 가입하세요', msgGoLogin: '이미 계정이 있으신가요?',
+    loginFailed: '로그인에 실패했습니다.', signupFailed: '회원가입에 실패했습니다.',
+    emailRateLimit: '이메일 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.'
     },
     'en-US': {
     login: 'Sign In', signup: 'Sign Up', email: 'Email or ID', password: 'Password',
     confirmPw: 'Confirm Password', name: 'Nickname', btnLogin: 'Sign In', btnSignup: 'Get Started',
-    msg: 'New to MoodFlick?', msgGoSignup: 'Sign up now', msgGoLogin: 'Already have an account?'
+    msg: 'New to MoodFlick?', msgGoSignup: 'Sign up now', msgGoLogin: 'Already have an account?',
+    loginFailed: 'Sign in failed.', signupFailed: 'Sign up failed.',
+    emailRateLimit: 'Too many email requests. Please try again later.'
     },
     'ja-JP': {
     login: 'ログイン', signup: '新規登録', email: 'メールアドレスまたはID', password: 'パスワード',
-    confirmPw: 'パスワード再確認', name: 'ニックネーム', btnLogin: 'ログイン', btnSignup: '登録する',
-    msg: 'アカウントをお持ちでないですか？', msgGoSignup: '今すぐ登録', msgGoLogin: 'すでにアカウントをお持ちですか？'
+    confirmPw: 'パスワード確認', name: 'ニックネーム', btnLogin: 'ログイン', btnSignup: '登録する',
+    msg: 'アカウントをお持ちでないですか？', msgGoSignup: '今すぐ登録', msgGoLogin: 'すでにアカウントをお持ちですか？',
+    loginFailed: 'ログインに失敗しました。', signupFailed: '登録に失敗しました。',
+    emailRateLimit: 'メールリクエストが多すぎます。しばらくしてからもう一度お試しください。'
     },
     'zh-CN': {
-    login: '登录', signup: '注册', email: '电子邮箱 or 账号', password: '密码',
+    login: '登录', signup: '注册', email: '电子邮箱或账号', password: '密码',
     confirmPw: '确认密码', name: '昵称', btnLogin: '登录', btnSignup: '立即注册',
-    msg: '还没有账号吗？', msgGoSignup: '现在注册', msgGoLogin: '已经有账号了？'
+    msg: '还没有账号吗？', msgGoSignup: '现在注册', msgGoLogin: '已经有账号了？',
+    loginFailed: '登录失败。', signupFailed: '注册失败。',
+    emailRateLimit: '邮件请求过多。请稍后再试。'
     }
 };
 
 const text = UI_TEXT[language] || UI_TEXT['ko-KR'];
+
+const formatAuthError = (detail, fallback) => {
+    if (!detail) return fallback;
+    if (String(detail).toLowerCase().includes('email rate limit')) {
+        return text.emailRateLimit;
+    }
+    return detail;
+};
 
   // 모달이 닫히면 입력값 초기화
 useEffect(() => {
@@ -67,7 +83,7 @@ const handleSubmit = async (e) => {
         onClose()
         window.location.reload()
       } catch (err) {
-        setError(err.response?.data?.detail || '로그인에 실패했습니다.')
+        setError(formatAuthError(err.response?.data?.detail, text.loginFailed))
       }
     } else {
       try {
@@ -83,7 +99,7 @@ const handleSubmit = async (e) => {
         onClose()
         window.location.reload()
       } catch (err) {
-        setError(err.response?.data?.detail || '회원가입에 실패했습니다.')
+        setError(formatAuthError(err.response?.data?.detail, text.signupFailed))
       }
     }
 };
