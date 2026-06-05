@@ -1,6 +1,7 @@
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
-export default function UserMenu({ username, logoutLabel, onLogout }) {
+export default function UserMenu({ username, profileLabel, logoutLabel, onLogout }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -37,6 +38,13 @@ export default function UserMenu({ username, logoutLabel, onLogout }) {
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-40 bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50">
+          <Link
+            href="/profile"
+            onClick={() => setIsOpen(false)}
+            className="block w-full text-left px-4 py-3 text-sm font-bold text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            {profileLabel}
+          </Link>
           <button
             type="button"
             onClick={() => {

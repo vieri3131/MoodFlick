@@ -35,6 +35,7 @@ const PAGE_TEXT = {
     loading: '불러오는 중...',
     watchlist: '관심 목록',
     watched: '본 영화',
+    profile: '프로필',
     logout: '로그아웃',
   },
   'en-US': {
@@ -45,6 +46,7 @@ const PAGE_TEXT = {
     loading: 'Loading...',
     watchlist: 'Watchlist',
     watched: 'Watched',
+    profile: 'Profile',
     logout: 'Log Out',
   },
   'ja-JP': {
@@ -55,6 +57,7 @@ const PAGE_TEXT = {
     loading: '読み込み中...',
     watchlist: 'ウォッチリスト',
     watched: '視聴済み',
+    profile: 'プロフィール',
     logout: 'ログアウト',
   },
   'zh-CN': {
@@ -65,6 +68,7 @@ const PAGE_TEXT = {
     loading: '加载中...',
     watchlist: '观看清单',
     watched: '已观看',
+    profile: '个人资料',
     logout: '退出登录',
   },
 };
@@ -159,6 +163,7 @@ export default function UserLibraryPage({ type, language = DEFAULT_LANGUAGE }) {
             {currentUser && (
               <UserMenu
                 username={currentUser}
+                profileLabel={text.profile}
                 logoutLabel={text.logout}
                 onLogout={() => {
                   localStorage.removeItem('token');

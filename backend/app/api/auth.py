@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from supabase import create_client
 import os
@@ -12,8 +12,10 @@ router = APIRouter(tags=["auth"])
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) if SUPABASE_SERVICE_ROLE_KEY else None
 
 LOCAL_USER_FILE = Path(__file__).resolve().parents[2] / "local_users.json"
 
@@ -84,6 +86,12 @@ def _find_local_user_by_token(token: str) -> dict | None:
     return None
 
 
+def _get_bearer_token(authorization: str | None) -> str:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    return authorization.removeprefix("Bearer ") if hasattr(authorization, "removeprefix") else authorization[len("Bearer "):]
+
+
 def get_user_id_from_token(token: str) -> str:
     if token.startswith("local:"):
         local_user = _find_local_user_by_token(token)
@@ -110,6 +118,11 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+class ProfileUpdateRequest(BaseModel):
+    nickname: str | None = None
+    email: str | None = None
+    password: str | None = None
 
 @router.post("/register")
 def register(body: RegisterRequest):
@@ -182,3 +195,117 @@ def login(body: LoginRequest):
         }
 
     raise HTTPException(status_code=401, detail="Invalid email or password")
+
+
+@router.get("/profile")
+def get_profile(authorization: str | None = Header(default=None)):
+    token = _get_bearer_token(authorization)
+
+    local_user = _find_local_user_by_token(token)
+    if local_user:
+        return {
+            "nickname": local_user.get("nickname", ""),
+            "email": local_user.get("email", ""),
+            "hasPassword": True
+        }
+
+    try:
+        response = supabase.auth.get_user(token)
+        user = response.user
+        return {
+            "nickname": user.user_metadata.get("nickname", "") if user.user_metadata else "",
+            "email": user.email,
+            "hasPassword": True
+        }
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+
+@router.patch("/profile")
+def update_profile(body: ProfileUpdateRequest, authorization: str | None = Header(default=None)):
+    token = _get_bearer_token(authorization)
+    local_user = _find_local_user_by_token(token)
+
+    if not any([body.nickname is not None, body.email is not None, body.password is not None]):
+        raise HTTPException(status_code=400, detail="No profile changes provided")
+
+    if local_user:
+        users = _load_local_users()
+        current_email = local_user["email"]
+        user = users.get(current_email)
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+        next_email = body.email.strip() if body.email is not None else current_email
+        if not next_email:
+            raise HTTPException(status_code=400, detail="Email is required")
+        if next_email != current_email and next_email in users:
+            raise HTTPException(status_code=400, detail="Email already exists")
+
+        if body.nickname is not None:
+            nickname = body.nickname.strip()
+            if not nickname:
+                raise HTTPException(status_code=400, detail="Nickname is required")
+            user["nickname"] = nickname
+
+        if body.password is not None:
+            if len(body.password) < 6:
+                raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+            user["password_hash"] = _hash_password(body.password)
+
+        if next_email != current_email:
+            users[next_email] = user
+            del users[current_email]
+        else:
+            users[current_email] = user
+
+        _save_local_users(users)
+        return {
+            "nickname": user.get("nickname", ""),
+            "email": next_email,
+            "hasPassword": True
+        }
+
+    try:
+        response = supabase.auth.get_user(token)
+        user = response.user
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    if supabase_admin is None:
+        raise HTTPException(
+            status_code=501,
+            detail="Profile updates for Supabase users require SUPABASE_SERVICE_ROLE_KEY"
+        )
+
+    updates = {}
+    metadata = dict(user.user_metadata or {})
+
+    if body.nickname is not None:
+        nickname = body.nickname.strip()
+        if not nickname:
+            raise HTTPException(status_code=400, detail="Nickname is required")
+        metadata["nickname"] = nickname
+        updates["user_metadata"] = metadata
+
+    if body.email is not None:
+        email = body.email.strip()
+        if not email:
+            raise HTTPException(status_code=400, detail="Email is required")
+        updates["email"] = email
+
+    if body.password is not None:
+        if len(body.password) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+        updates["password"] = body.password
+
+    try:
+        updated = supabase_admin.auth.admin.update_user_by_id(user.id, updates)
+        updated_user = updated.user
+        return {
+            "nickname": (updated_user.user_metadata or {}).get("nickname", ""),
+            "email": updated_user.email,
+            "hasPassword": True
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
