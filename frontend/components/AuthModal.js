@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 export default function AuthModal({ isOpen, onClose, language }) {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
   // 'login' 또는 'signup' 상태 관리
 const [activeTab, setActiveTab] = useState('login');
 
@@ -57,7 +59,7 @@ const handleSubmit = async (e) => {
     if (activeTab === 'login') {
       try {
         setError('')
-        const response = await axios.post('http://localhost:8000/auth/login', {
+        const response = await axios.post(`${API_URL}/auth/login`, {
           email,
           password
         })
@@ -71,7 +73,7 @@ const handleSubmit = async (e) => {
     } else {
       try {
         setError('')
-        const response = await axios.post('http://localhost:8000/auth/register', {
+        const response = await axios.post(`${API_URL}/auth/register`, {
           nickname,
           email,
           password,
