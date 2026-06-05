@@ -86,10 +86,10 @@ function toMovie(item) {
   };
 }
 
-export default function UserLibraryPage({ type, language = DEFAULT_LANGUAGE }) {
+export default function UserLibraryPage({ type }) {
   const router = useRouter();
   const config = TEXT[type];
-  const [activeLanguage, setActiveLanguage] = useState(language);
+  const [activeLanguage, setActiveLanguage] = useState(DEFAULT_LANGUAGE);
   const [currentUser, setCurrentUser] = useState(null);
   const [items, setItems] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
@@ -99,12 +99,9 @@ export default function UserLibraryPage({ type, language = DEFAULT_LANGUAGE }) {
 
   useEffect(() => {
     setActiveLanguage(getStoredLanguage());
-
     const nickname = localStorage.getItem('nickname');
     const token = localStorage.getItem('token');
-    if (nickname && token) {
-      setCurrentUser(nickname);
-    }
+    if (nickname && token) setCurrentUser(nickname);
   }, []);
 
   useEffect(() => {
@@ -118,24 +115,32 @@ export default function UserLibraryPage({ type, language = DEFAULT_LANGUAGE }) {
         setLoading(false);
         return;
       }
-
       try {
         const response = await axios.get(`${API_URL}${config.endpoint}`, {
           headers: getAuthHeaders(),
         });
         setItems(response.data || []);
       } catch (err) {
-        setError(
-          err.response?.data?.detail ||
-            text.loadError
-        );
+        setError(err.response?.data?.detail || text.loadError);
       } finally {
         setLoading(false);
       }
     };
-
     fetchItems();
   }, [config.endpoint, activeLanguage, text.authRequired, text.loadError]);
+
+  const handleCardClick = async (item) => {
+    setSelectedMovie(toMovie(item));
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/movies/${item.movie_id}`,
+        { params: { language: activeLanguage } }
+      );
+      setSelectedMovie(response.data);
+    } catch {
+      // keep the basic data already shown
+    }
+  };
 
   const handleRemove = async (movieId) => {
     try {
@@ -144,10 +149,7 @@ export default function UserLibraryPage({ type, language = DEFAULT_LANGUAGE }) {
       });
       setItems((current) => current.filter((item) => item.movie_id !== movieId));
     } catch (err) {
-      alert(
-        err.response?.data?.detail ||
-          text.removeError
-      );
+      alert(err.response?.data?.detail || text.removeError);
     }
   };
 
@@ -206,9 +208,7 @@ export default function UserLibraryPage({ type, language = DEFAULT_LANGUAGE }) {
           <h1 className="text-3xl md:text-4xl font-black">
             {config.title[activeLanguage] || config.title['en-US']}
           </h1>
-          <p className="mt-2 text-slate-400">
-            {text.description}
-          </p>
+          <p className="mt-2 text-slate-400">{text.description}</p>
         </div>
 
         {loading && <p className="text-slate-400">{text.loading}</p>}
@@ -225,7 +225,10 @@ export default function UserLibraryPage({ type, language = DEFAULT_LANGUAGE }) {
               const movie = toMovie(item);
               return (
                 <article key={item.id || item.movie_id} className="group">
-                  <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
+                  <MovieCard
+                    movie={movie}
+                    onClick={() => handleCardClick(item)}
+                  />
                   {item[config.dateField] && (
                     <p className="mt-3 text-xs text-slate-500 px-1">
                       {new Date(item[config.dateField]).toLocaleDateString()}
