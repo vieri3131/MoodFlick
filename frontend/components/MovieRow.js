@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import MovieCard from './MovieCard';
 
-export default function MovieRow({ title, movies }) {
+export default function MovieRow({ title, movies, onMovieClick }) {
 const scrollRef = useRef(null);
 const [isDown, setIsDown] = useState(false);
 const [startX, setStartX] = useState(0);
@@ -87,7 +87,8 @@ return (
             key={movie.tmdbId || index} 
             className="flex-shrink-0 w-[240px] sm:w-[280px] snap-start"
             >
-            <MovieCard movie={movie} />
+          {/* 👇 하위 컴포넌트로 클릭 이벤트 전달 */}
+            <MovieCard movie={movie} onClick={onMovieClick} /> 
             </div>
         ))}
         </div>

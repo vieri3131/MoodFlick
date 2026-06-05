@@ -1,7 +1,7 @@
-export default function MovieCard({ movie }) {
+export default function MovieCard({ movie, onClick }) { 
     return (
-    <div className="group relative bg-slate-800 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_30px_rgba(139,92,246,0.3)] cursor-pointer">
-    
+    // 2. 세 번째 줄: div 태그 안에 onClick 이벤트를 추가합니다.
+    <div onClick={() => onClick && onClick(movie)} className="group relative bg-slate-800 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_30px_rgba(139,92,246,0.3)] cursor-pointer">
       {/* 포스터 영역 (비율 유지) */}
     <div className="relative aspect-[2/3] w-full">
         <img

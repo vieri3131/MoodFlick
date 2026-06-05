@@ -7,6 +7,7 @@ import CountryFilter from '../components/CountryFilter';
 import LanguageToggle from '../components/LanguageToggle';
 import AuthModal from '../components/AuthModal';
 import SearchBar from '../components/SearchBar';
+import MovieModal from '../components/MovieModal';
 
 // 🎭 10가지 감정 테마 (4개국어 지원)
 const EMOTION_THEMES = [
@@ -31,6 +32,7 @@ const PAGE_TEXT = {
 
 export default function Home() {
   const [movies, setMovies] = useState([]);
+  const [selectedMovie, setSelectedMovie] = useState(null);
   const [loading, setLoading] = useState(false);
   const [country, setCountry] = useState(['ALL']);
   const [language, setLanguage] = useState('ko-KR');
@@ -175,7 +177,8 @@ export default function Home() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {movies.map((movie, index) => (
-                <MovieCard key={movie.tmdbId || index} movie={movie} />
+                {/* 👇 프롭스 추가 */}
+                <MovieCard key={movie.tmdbId || index} movie={movie} onClick={(m) => setSelectedMovie(m)} />
               ))}
             </div>
           </section>
@@ -187,7 +190,8 @@ export default function Home() {
               <MovieRow 
                 key={theme.id}
                 title={theme.title[language] || theme.title['ko-KR']} 
-                movies={theme.movies} 
+                movies={theme.movies}
+                onMovieClick={(m) => setSelectedMovie(m)} // 👈 프롭스 추가
               />
             ))}
           </section>
@@ -203,6 +207,15 @@ export default function Home() {
         onClose={() => setIsAuthModalOpen(false)} 
         language={language} 
       />
+
+      {/* 👇 3. 영화가 선택되었을 때만 모달 렌더링 */}
+      {selectedMovie && (
+        <MovieModal 
+          movie={selectedMovie} 
+          onClose={() => setSelectedMovie(null)} 
+          language={language} 
+        />
+      )}
     </div>
   );
 }
