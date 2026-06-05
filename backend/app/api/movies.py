@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 from app.services.tmdb_service import discover_movies, search_movies
 
-router = APIRouter(prefix="/api", tags=["recommend"])
+router = APIRouter(tags=["recommend"])
 
 
 @router.get("/movies")

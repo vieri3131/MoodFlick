@@ -40,7 +40,7 @@ def discover_movies(
     elif genre_id:
         params["with_genres"] = genre_id
 
-    if country:
+    if country and country.upper() != "ALL":
         params["with_origin_country"] = country
 
     response = requests.get(url, params=params, timeout=10)

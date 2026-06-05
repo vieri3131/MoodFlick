@@ -3,7 +3,7 @@ from app.schemas.recommend_schema import RecommendRequest
 from app.services.recommend_service import recommend_movies
 from app.services.ai_service import parse_mood
 
-router = APIRouter(prefix="/api", tags=["recommend"])
+router = APIRouter(tags=["recommend"])
 
 @router.post("/recommend")
 def recommend(request: RecommendRequest):

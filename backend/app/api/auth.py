@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from supabase import create_client
 import os
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(tags=["auth"])
 
 supabase = create_client(
     os.getenv("SUPABASE_URL"),
