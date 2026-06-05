@@ -17,10 +17,6 @@ def discover_movies(
     min_rating: float = 6.5,
     page: int = 1,
 ):
-    """
-    TMDB Discover API를 사용해 조건에 맞는 영화 목록을 조회한다.
-    """
-
     if not TMDB_API_KEY:
         raise RuntimeError("TMDB_API_KEY가 설정되어 있지 않습니다.")
 
@@ -43,16 +39,24 @@ def discover_movies(
     if country and country.upper() != "ALL":
         params["with_origin_country"] = country
 
-    response = requests.get(url, params=params, timeout=10)
-    response.raise_for_status()
-
-    data = response.json()
-    movies = data.get("results", [])
-
-    return [format_movie(movie) for movie in movies]
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        movies = data.get("results", [])
+        return [format_movie(movie) for movie in movies]
+    except requests.exceptions.Timeout:
+        raise RuntimeError("TMDB API 요청 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.")
+    except requests.exceptions.HTTPError as e:
+        raise RuntimeError(f"TMDB API 오류: {e.response.status_code}")
+    except Exception as e:
+        raise RuntimeError(f"영화 데이터를 불러오는 중 오류가 발생했습니다: {str(e)}")
 
 
 def search_movies(query: str, language: str = "ko-KR"):
+    if not TMDB_API_KEY:
+        raise RuntimeError("TMDB_API_KEY가 설정되어 있지 않습니다.")
+
     params = {
         "api_key": TMDB_API_KEY,
         "query": query,
@@ -60,18 +64,23 @@ def search_movies(query: str, language: str = "ko-KR"):
         "include_adult": False,
         "page": 1,
     }
-    response = requests.get(f"{TMDB_BASE_URL}/search/movie", params=params)
-    response.raise_for_status()
-    results = response.json().get("results", [])
-    return [format_movie(m) for m in results if m.get("poster_path")]
+
+    try:
+        response = requests.get(f"{TMDB_BASE_URL}/search/movie", params=params, timeout=10)
+        response.raise_for_status()
+        results = response.json().get("results", [])
+        return [format_movie(m) for m in results if m.get("poster_path")]
+    except requests.exceptions.Timeout:
+        raise RuntimeError("TMDB API 요청 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.")
+    except requests.exceptions.HTTPError as e:
+        raise RuntimeError(f"TMDB API 오류: {e.response.status_code}")
+    except Exception as e:
+        raise RuntimeError(f"영화 검색 중 오류가 발생했습니다: {str(e)}")
 
 
 def format_movie(movie: dict):
-    """
-    TMDB 응답 데이터를 프론트엔드에서 사용하기 쉬운 형태로 변환한다.
-    """
     poster_path = movie.get("poster_path")
-    backdrop_path = movie.get("backdrop_path") # 👈 추가됨
+    backdrop_path = movie.get("backdrop_path")
 
     return {
         "tmdbId": movie.get("id"),
@@ -79,8 +88,7 @@ def format_movie(movie: dict):
         "originalTitle": movie.get("original_title"),
         "overview": movie.get("overview"),
         "posterUrl": f"{TMDB_IMAGE_BASE_URL}{poster_path}" if poster_path else None,
-        # 👇 추가됨: 모달 배경용 고화질 원본 이미지
-        "backdropUrl": f"https://image.tmdb.org/t/p/original{backdrop_path}" if backdrop_path else None, 
+        "backdropUrl": f"https://image.tmdb.org/t/p/original{backdrop_path}" if backdrop_path else None,
         "rating": movie.get("vote_average"),
         "releaseDate": movie.get("release_date"),
     }
