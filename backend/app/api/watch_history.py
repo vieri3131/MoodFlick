@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from postgrest.exceptions import APIError
-from app.api.auth import supabase
+from app.api.auth import supabase, get_user_id_from_token
 
 router = APIRouter(tags=["watch_history"])
 
@@ -15,12 +15,8 @@ class WatchHistoryItem(BaseModel):
 def _get_user_id(authorization: str | None) -> str:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
-    token = authorization.removeprefix("Bearer ")
-    try:
-        result = supabase.auth.get_user(token)
-        return result.user.id
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    token = authorization.removeprefix("Bearer ") if hasattr(authorization, 'removeprefix') else authorization[len("Bearer "):]
+    return get_user_id_from_token(token)
 
 
 @router.post("/watch-history", status_code=201)

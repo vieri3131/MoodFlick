@@ -1,7 +1,11 @@
 import { useEffect } from 'react';
+import { useRouter } from 'next/router';
 import axios from 'axios'; // 👈 API 통신을 위해 axios 추가
+import { API_URL, getAuthHeaders, getAuthToken } from '../lib/api';
 
 export default function MovieModal({ movie, onClose, language }) {
+  const router = useRouter();
+
   // 모달이 열리면 배경(body) 스크롤 방지
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -16,28 +20,30 @@ export default function MovieModal({ movie, onClose, language }) {
   // 🚀 백엔드 API 호출 공통 함수 (관심 목록 / 시청 기록)
   const handleAddToList = async (endpoint, successMessage) => {
     // 1. 로컬 스토리지에서 로그인 토큰 꺼내기
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     if (!token) {
       alert('로그인이 필요한 기능입니다.');
       return;
     }
 
     try {
-      // API 주소 (추후 Vercel 배포 시 환경변수 처리 고려)
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      
       // 2. 백엔드로 POST 요청 보내기
       await axios.post(`${API_URL}${endpoint}`, {
         movie_id: movie.tmdbId,
         movie_title: movie.title,
         poster_path: movie.posterUrl || '/placeholder-poster.png'
       }, {
-        headers: {
-          Authorization: `Bearer ${token}` // 👈 헤더에 토큰 실어서 보내기
-        }
+        headers: getAuthHeaders()
       });
       
-      alert(successMessage);
+      const shouldOpenList = window.confirm(
+        `${successMessage}\n\n${
+          language === 'ko-KR' ? '목록 페이지로 이동할까요?' : 'Open the list page now?'
+        }`
+      );
+      if (shouldOpenList) {
+        router.push(endpoint === '/api/watchlist' ? '/favorites' : '/watched');
+      }
     } catch (error) {
       // 백엔드에서 409(Conflict - 중복) 에러를 보냈을 경우 처리
       if (error.response && error.response.status === 409) {

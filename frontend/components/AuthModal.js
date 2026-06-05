@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_URL } from '../lib/api';
 
 export default function AuthModal({ isOpen, onClose, language }) {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
   // 'login' 또는 'signup' 상태 관리
 const [activeTab, setActiveTab] = useState('login');
 

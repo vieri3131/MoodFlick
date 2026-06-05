@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import axios from 'axios';
 import MoodInput from '../components/MoodInput';
 import MovieCard from '../components/MovieCard';
@@ -8,8 +9,7 @@ import LanguageToggle from '../components/LanguageToggle';
 import AuthModal from '../components/AuthModal';
 import SearchBar from '../components/SearchBar';
 import MovieModal from '../components/MovieModal';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moodflick-api-2vvb.onrender.com';
+import { API_URL } from '../lib/api';
 
 // 🎭 10가지 감정 테마 (4개국어 지원)
 const EMOTION_THEMES = [
@@ -33,7 +33,6 @@ const PAGE_TEXT = {
 };
 
 export default function Home() {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moodflick-backend.onrender.com';
   const [movies, setMovies] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -131,6 +130,18 @@ const handleDirectSearch = async (keyword) => {
                 <span style={{ color: 'white', fontWeight: 'bold' }}>
                   👤 {currentUser}
                 </span>
+                <Link
+                  href="/favorites"
+                  className="px-4 py-2 h-10 bg-white/10 hover:bg-white/20 border border-white/10 font-bold text-sm text-white rounded-full transition-all shadow-lg flex items-center"
+                >
+                  찜한 콘텐츠
+                </Link>
+                <Link
+                  href="/watched"
+                  className="px-4 py-2 h-10 bg-white/10 hover:bg-white/20 border border-white/10 font-bold text-sm text-white rounded-full transition-all shadow-lg flex items-center"
+                >
+                  본 영화
+                </Link>
                 <button
                   onClick={() => {
                     localStorage.removeItem('token')

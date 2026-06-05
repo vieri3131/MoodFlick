@@ -20,6 +20,7 @@ env/
 *.env
 .env.*
 !.env.example
+backend/local_users.json
 
 # IDE
 .vscode/
