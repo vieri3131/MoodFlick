@@ -9,6 +9,8 @@ import AuthModal from '../components/AuthModal';
 import SearchBar from '../components/SearchBar';
 import MovieModal from '../components/MovieModal';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moodflick-api-2vvb.onrender.com';
+
 // 🎭 10가지 감정 테마 (4개국어 지원)
 const EMOTION_THEMES = [
   { id: 'happy', genreId: 35, title: { 'ko-KR': '😊 기분 좋은 하루! 유쾌한 코미디', 'en-US': '😊 Feel Good Comedies', 'ja-JP': '😊 気分爽快！愉快なコメディ', 'zh-CN': '😊 心情愉悦！欢乐喜剧' } },
@@ -31,6 +33,7 @@ const PAGE_TEXT = {
 };
 
 export default function Home() {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moodflick-backend.onrender.com';
   const [movies, setMovies] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -53,8 +56,9 @@ export default function Home() {
     const fetchRandomThemes = async () => {
       try {
         const shuffled = [...EMOTION_THEMES].sort(() => 0.5 - Math.random()).slice(0, 5);
+        // 👇 2. http://localhost:8000 대신 ${API_URL} 로 변경!
         const requests = shuffled.map(theme => 
-          axios.get(`http://localhost:8000/api/movies?genre_id=${theme.genreId}&language=${language}`)
+          axios.get(`${API_URL}/api/movies?genre_id=${theme.genreId}&language=${language}`)
         );
         const responses = await Promise.all(requests);
         
@@ -75,7 +79,7 @@ export default function Home() {
     setHasSearched(true);
     try {
       const targetCountry = country.includes('ALL') ? '' : country.join(',');
-      const response = await axios.post('http://localhost:8000/api/recommend', {
+      const response = await axios.post(`${API_URL}/api/recommend`, {
         raw_mood: rawMood, country: targetCountry, language: language
       });
       if (response.data.success) {
@@ -91,16 +95,12 @@ export default function Home() {
     }
   };
 
-  const handleDirectSearch = async (keyword) => {
+const handleDirectSearch = async (keyword) => {
     if (!keyword.trim()) return
     try {
       const response = await axios.get(
-        'http://localhost:8000/api/movies/search',
-        { params: {
-            query: keyword,
-            language: language
-          }
-        }
+        `${API_URL}/api/movies/search`,
+        { params: { query: keyword, language: language } }
       )
       setMovies(response.data.movies)
       setHasSearched(true)
@@ -177,7 +177,6 @@ export default function Home() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {movies.map((movie, index) => (
-                {/* 👇 프롭스 추가 */}
                 <MovieCard key={movie.tmdbId || index} movie={movie} onClick={(m) => setSelectedMovie(m)} />
               ))}
             </div>
