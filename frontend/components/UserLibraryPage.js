@@ -77,9 +77,12 @@ function toMovie(item) {
   return {
     tmdbId: item.movie_id,
     title: item.movie_title,
-    posterUrl: item.poster_path,
-    backdropUrl: item.poster_path,
+    posterUrl: item.poster_path || null,
+    backdropUrl: item.poster_path || null,
     originalTitle: item.movie_title,
+    rating: null,
+    overview: null,
+    recommendReason: null,
   };
 }
 
