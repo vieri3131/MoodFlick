@@ -5,6 +5,7 @@ import axios from 'axios';
 import MovieCard from './MovieCard';
 import MovieModal from './MovieModal';
 import LanguageToggle from './LanguageToggle';
+import UserMenu from './UserMenu';
 import { API_URL, getAuthHeaders, getAuthToken } from '../lib/api';
 import { DEFAULT_LANGUAGE, getStoredLanguage, saveStoredLanguage } from '../lib/language';
 
@@ -156,9 +157,16 @@ export default function UserLibraryPage({ type, language = DEFAULT_LANGUAGE }) {
 
           <div className="ml-auto flex items-center gap-3 transition-all duration-300">
             {currentUser && (
-              <span style={{ color: 'white', fontWeight: 'bold' }}>
-                👤 {currentUser}
-              </span>
+              <UserMenu
+                username={currentUser}
+                logoutLabel={text.logout}
+                onLogout={() => {
+                  localStorage.removeItem('token');
+                  localStorage.removeItem('nickname');
+                  setCurrentUser(null);
+                  router.push('/');
+                }}
+              />
             )}
             <Link
               href="/favorites"
@@ -180,19 +188,6 @@ export default function UserLibraryPage({ type, language = DEFAULT_LANGUAGE }) {
             >
               {text.watched}
             </Link>
-            {currentUser && (
-              <button
-                onClick={() => {
-                  localStorage.removeItem('token');
-                  localStorage.removeItem('nickname');
-                  setCurrentUser(null);
-                  router.push('/');
-                }}
-                className="px-5 py-2 h-10 bg-slate-700 hover:bg-slate-600 font-bold text-sm text-white rounded-full transition-all shadow-lg active:scale-95"
-              >
-                {text.logout}
-              </button>
-            )}
             <LanguageToggle language={activeLanguage} setLanguage={setActiveLanguage} />
           </div>
         </div>

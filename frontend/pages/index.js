@@ -9,6 +9,7 @@ import LanguageToggle from '../components/LanguageToggle';
 import AuthModal from '../components/AuthModal';
 import SearchBar from '../components/SearchBar';
 import MovieModal from '../components/MovieModal';
+import UserMenu from '../components/UserMenu';
 import { API_URL } from '../lib/api';
 import { DEFAULT_LANGUAGE, getStoredLanguage, saveStoredLanguage } from '../lib/language';
 
@@ -172,9 +173,15 @@ const handleDirectSearch = async (keyword) => {
             <SearchBar language={language} onSearch={handleDirectSearch} />
             {currentUser ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: 'white', fontWeight: 'bold' }}>
-                  👤 {currentUser}
-                </span>
+                <UserMenu
+                  username={currentUser}
+                  logoutLabel={text.logout}
+                  onLogout={() => {
+                    localStorage.removeItem('token')
+                    localStorage.removeItem('nickname')
+                    setCurrentUser(null)
+                  }}
+                />
                 <Link
                   href="/favorites"
                   className="px-4 py-2 h-10 bg-white/10 hover:bg-white/20 border border-white/10 font-bold text-sm text-white rounded-full transition-all shadow-lg flex items-center"
@@ -187,16 +194,6 @@ const handleDirectSearch = async (keyword) => {
                 >
                   {text.watched}
                 </Link>
-                <button
-                  onClick={() => {
-                    localStorage.removeItem('token')
-                    localStorage.removeItem('nickname')
-                    setCurrentUser(null)
-                  }}
-                  className="px-5 py-2 h-10 bg-slate-700 hover:bg-slate-600 font-bold text-sm text-white rounded-full transition-all shadow-lg active:scale-95"
-                >
-                  {text.logout}
-                </button>
               </div>
             ) : (
               <button
