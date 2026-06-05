@@ -42,6 +42,7 @@ export default function Home() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [currentUser, setCurrentUser] = useState(null)
+  const [isNavCondensed, setIsNavCondensed] = useState(false)
 
   useEffect(() => {
     const nickname = localStorage.getItem('nickname')
@@ -49,6 +50,16 @@ export default function Home() {
     if (nickname && token) {
       setCurrentUser(nickname)
     }
+  }, [])
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsNavCondensed(window.scrollY > 90)
+    }
+
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   useEffect(() => {
@@ -119,11 +130,30 @@ const handleDirectSearch = async (keyword) => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-purple-500/30">
-      <header className="relative w-full py-20 flex flex-col items-center justify-center overflow-hidden mb-6 shadow-2xl">
+      <header className="relative w-full pt-28 pb-20 flex flex-col items-center justify-center overflow-hidden mb-6 shadow-2xl">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-950 to-slate-950 z-0" />
-        
-        <div className="relative z-10 w-full max-w-3xl text-center px-6">
-          <div className="absolute -top-12 right-0 z-50 flex items-center gap-3">
+
+        <nav className={`fixed top-0 left-0 right-0 z-[80] transition-all duration-300 ${
+          isNavCondensed
+            ? 'bg-slate-950/80 backdrop-blur-xl border-b border-white/10 shadow-2xl shadow-black/30'
+            : 'bg-transparent'
+        }`}>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center">
+            <Link
+              href="/"
+              className={`absolute left-4 sm:left-6 text-2xl sm:text-3xl font-black tracking-tight drop-shadow-2xl transition-all duration-300 ${
+                isNavCondensed
+                  ? 'opacity-100 translate-x-0'
+                  : 'opacity-0 -translate-x-3 pointer-events-none'
+              }`}
+              aria-hidden={!isNavCondensed}
+            >
+              Mood<span className="text-purple-500">Flick</span>
+            </Link>
+
+            <div className={`flex items-center gap-3 transition-all duration-300 ${
+              isNavCondensed ? 'ml-auto' : 'mx-auto'
+            }`}>
             <SearchBar language={language} onSearch={handleDirectSearch} />
             {currentUser ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -163,6 +193,10 @@ const handleDirectSearch = async (keyword) => {
             )}
             <LanguageToggle language={language} setLanguage={setLanguage} />
           </div>
+          </div>
+        </nav>
+
+        <div className="relative z-10 w-full max-w-3xl text-center px-6">
 
           <h1 className="text-5xl md:text-6xl font-black text-white mb-4 tracking-tight drop-shadow-2xl">
             Mood<span className="text-purple-500">Flick</span>
