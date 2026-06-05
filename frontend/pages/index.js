@@ -10,6 +10,7 @@ import AuthModal from '../components/AuthModal';
 import SearchBar from '../components/SearchBar';
 import MovieModal from '../components/MovieModal';
 import { API_URL } from '../lib/api';
+import { DEFAULT_LANGUAGE, getStoredLanguage, saveStoredLanguage } from '../lib/language';
 
 // 🎭 10가지 감정 테마 (4개국어 지원)
 const EMOTION_THEMES = [
@@ -37,7 +38,7 @@ export default function Home() {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [loading, setLoading] = useState(false);
   const [country, setCountry] = useState(['ALL']);
-  const [language, setLanguage] = useState('ko-KR');
+  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
   const [randomThemes, setRandomThemes] = useState([]);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -45,12 +46,18 @@ export default function Home() {
   const [isNavCondensed, setIsNavCondensed] = useState(false)
 
   useEffect(() => {
+    setLanguage(getStoredLanguage())
+
     const nickname = localStorage.getItem('nickname')
     const token = localStorage.getItem('token')
     if (nickname && token) {
       setCurrentUser(nickname)
     }
   }, [])
+
+  useEffect(() => {
+    saveStoredLanguage(language)
+  }, [language])
 
   useEffect(() => {
     const handleScroll = () => {

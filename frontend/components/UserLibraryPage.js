@@ -6,6 +6,7 @@ import MovieCard from './MovieCard';
 import MovieModal from './MovieModal';
 import LanguageToggle from './LanguageToggle';
 import { API_URL, getAuthHeaders, getAuthToken } from '../lib/api';
+import { DEFAULT_LANGUAGE, getStoredLanguage, saveStoredLanguage } from '../lib/language';
 
 const TEXT = {
   favorites: {
@@ -34,7 +35,7 @@ function toMovie(item) {
   };
 }
 
-export default function UserLibraryPage({ type, language = 'ko-KR' }) {
+export default function UserLibraryPage({ type, language = DEFAULT_LANGUAGE }) {
   const router = useRouter();
   const config = TEXT[type];
   const [activeLanguage, setActiveLanguage] = useState(language);
@@ -45,12 +46,18 @@ export default function UserLibraryPage({ type, language = 'ko-KR' }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    setActiveLanguage(getStoredLanguage());
+
     const nickname = localStorage.getItem('nickname');
     const token = localStorage.getItem('token');
     if (nickname && token) {
       setCurrentUser(nickname);
     }
   }, []);
+
+  useEffect(() => {
+    saveStoredLanguage(activeLanguage);
+  }, [activeLanguage]);
 
   useEffect(() => {
     const fetchItems = async () => {
