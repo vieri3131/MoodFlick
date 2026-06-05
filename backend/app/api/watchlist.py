@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from postgrest.exceptions import APIError
-from app.api.auth import supabase, get_user_id_from_token
+from app.api.auth import supabase
+from app.api.utils import extract_user_id
 
 router = APIRouter(tags=["watchlist"])
 
@@ -9,19 +10,12 @@ router = APIRouter(tags=["watchlist"])
 class WatchlistItem(BaseModel):
     movie_id: int
     movie_title: str
-    poster_path: str
-
-
-def _get_user_id(authorization: str | None) -> str:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
-    token = authorization.removeprefix("Bearer ") if hasattr(authorization, 'removeprefix') else authorization[len("Bearer "):]
-    return get_user_id_from_token(token)
+    poster_path: str | None = None
 
 
 @router.post("/watchlist", status_code=201)
 def add_to_watchlist(item: WatchlistItem, authorization: str | None = Header(default=None)):
-    user_id = _get_user_id(authorization)
+    user_id = extract_user_id(authorization)
     try:
         supabase.table("watchlist").insert({
             "user_id": user_id,
@@ -40,7 +34,7 @@ def add_to_watchlist(item: WatchlistItem, authorization: str | None = Header(def
 
 @router.delete("/watchlist/{movie_id}")
 def remove_from_watchlist(movie_id: int, authorization: str | None = Header(default=None)):
-    user_id = _get_user_id(authorization)
+    user_id = extract_user_id(authorization)
     try:
         result = supabase.table("watchlist").delete().eq(
             "user_id", user_id
@@ -56,7 +50,7 @@ def remove_from_watchlist(movie_id: int, authorization: str | None = Header(defa
 
 @router.get("/watchlist")
 def get_watchlist(authorization: str | None = Header(default=None)):
-    user_id = _get_user_id(authorization)
+    user_id = extract_user_id(authorization)
     try:
         result = supabase.table("watchlist").select("*").eq(
             "user_id", user_id

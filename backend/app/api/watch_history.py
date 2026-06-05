@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from postgrest.exceptions import APIError
-from app.api.auth import supabase, get_user_id_from_token
+from app.api.auth import supabase
+from app.api.utils import extract_user_id
 
 router = APIRouter(tags=["watch_history"])
 
@@ -9,19 +10,12 @@ router = APIRouter(tags=["watch_history"])
 class WatchHistoryItem(BaseModel):
     movie_id: int
     movie_title: str
-    poster_path: str
-
-
-def _get_user_id(authorization: str | None) -> str:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
-    token = authorization.removeprefix("Bearer ") if hasattr(authorization, 'removeprefix') else authorization[len("Bearer "):]
-    return get_user_id_from_token(token)
+    poster_path: str | None = None
 
 
 @router.post("/watch-history", status_code=201)
 def add_to_watch_history(item: WatchHistoryItem, authorization: str | None = Header(default=None)):
-    user_id = _get_user_id(authorization)
+    user_id = extract_user_id(authorization)
     try:
         supabase.table("watch_history").insert({
             "user_id": user_id,
@@ -40,7 +34,7 @@ def add_to_watch_history(item: WatchHistoryItem, authorization: str | None = Hea
 
 @router.delete("/watch-history/{movie_id}")
 def remove_from_watch_history(movie_id: int, authorization: str | None = Header(default=None)):
-    user_id = _get_user_id(authorization)
+    user_id = extract_user_id(authorization)
     try:
         result = supabase.table("watch_history").delete().eq(
             "user_id", user_id
@@ -56,7 +50,7 @@ def remove_from_watch_history(movie_id: int, authorization: str | None = Header(
 
 @router.get("/watch-history")
 def get_watch_history(authorization: str | None = Header(default=None)):
-    user_id = _get_user_id(authorization)
+    user_id = extract_user_id(authorization)
     try:
         result = supabase.table("watch_history").select("*").eq(
             "user_id", user_id
