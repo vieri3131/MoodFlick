@@ -6,7 +6,7 @@ import MovieCard from './MovieCard';
 import MovieModal from './MovieModal';
 import LanguageToggle from './LanguageToggle';
 import UserMenu from './UserMenu';
-import { API_URL, getAuthHeaders, getAuthToken } from '../lib/api';
+import { API_URL, getAuthHeaders, getAuthToken, refreshAuthToken } from '../lib/api';
 import { DEFAULT_LANGUAGE, getStoredLanguage, saveStoredLanguage } from '../lib/language';
 
 const TEXT = {
@@ -121,7 +121,30 @@ export default function UserLibraryPage({ type }) {
         });
         setItems(response.data || []);
       } catch (err) {
-        setError(err.response?.data?.detail || text.loadError);
+        if (err.response?.status === 401) {
+          const refreshed = await refreshAuthToken();
+          if (refreshed) {
+            // retry once with new token
+            try {
+              const retry = await axios.get(`${API_URL}${config.endpoint}`, {
+                headers: getAuthHeaders(),
+              });
+              setItems(retry.data || []);
+            } catch {
+              localStorage.removeItem('token');
+              localStorage.removeItem('refresh_token');
+              localStorage.removeItem('nickname');
+              router.push('/');
+            }
+          } else {
+            localStorage.removeItem('token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('nickname');
+            router.push('/');
+          }
+        } else {
+          setError(err.response?.data?.detail || text.loadError);
+        }
       } finally {
         setLoading(false);
       }
