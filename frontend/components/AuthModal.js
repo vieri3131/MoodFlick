@@ -79,6 +79,7 @@ const handleSubmit = async (e) => {
           password
         })
         localStorage.setItem('token', response.data.token)
+        localStorage.setItem('refresh_token', response.data.refresh_token)
         localStorage.setItem('nickname', response.data.nickname)
         onClose()
         window.location.reload()
@@ -95,6 +96,7 @@ const handleSubmit = async (e) => {
           confirm_password: confirmPassword
         })
         localStorage.setItem('token', response.data.token)
+        localStorage.setItem('refresh_token', response.data.refresh_token)
         localStorage.setItem('nickname', response.data.nickname)
         onClose()
         window.location.reload()
