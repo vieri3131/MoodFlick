@@ -127,14 +127,6 @@ const handleDirectSearch = async (keyword, lang) => {
     }
   }
 
-  useEffect(() => {
-    const pendingSearch = sessionStorage.getItem('pendingMovieSearch')
-    if (!pendingSearch) return
-
-    sessionStorage.removeItem('pendingMovieSearch')
-    handleDirectSearch(pendingSearch, getStoredLanguage())
-  }, [])
-
   const text = PAGE_TEXT[language] || PAGE_TEXT['ko-KR'];
 
   const sectionTitle = {
