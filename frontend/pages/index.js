@@ -113,12 +113,12 @@ export default function Home() {
     }
   };
 
-const handleDirectSearch = async (keyword) => {
+const handleDirectSearch = async (keyword, lang) => {
     if (!keyword.trim()) return
     try {
       const response = await axios.get(
         `${API_URL}/api/movies/search`,
-        { params: { query: keyword, language: language } }
+        { params: { query: keyword, language: lang || language } }
       )
       setMovies(response.data.movies)
       setHasSearched(true)
@@ -132,7 +132,7 @@ const handleDirectSearch = async (keyword) => {
     if (!pendingSearch) return
 
     sessionStorage.removeItem('pendingMovieSearch')
-    handleDirectSearch(pendingSearch)
+    handleDirectSearch(pendingSearch, getStoredLanguage())
   }, [])
 
   const text = PAGE_TEXT[language] || PAGE_TEXT['ko-KR'];
