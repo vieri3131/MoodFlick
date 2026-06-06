@@ -68,6 +68,7 @@ def register(body: RegisterRequest):
             )
         return {
             "token": response.session.access_token,
+            "refresh_token": response.session.refresh_token,
             "nickname": body.nickname,
             "email": body.email
         }
@@ -89,6 +90,7 @@ def login(body: LoginRequest):
         nickname = response.user.user_metadata.get("nickname", "") if response.user.user_metadata else ""
         return {
             "token": response.session.access_token,
+            "refresh_token": response.session.refresh_token,
             "nickname": nickname,
             "email": body.email
         }
