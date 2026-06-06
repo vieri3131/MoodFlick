@@ -28,6 +28,8 @@ def get_user_id_from_token(token: str) -> str:
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
+class RefreshRequest(BaseModel):
+    refresh_token: str
 
 class RegisterRequest(BaseModel):
     nickname: str
@@ -35,17 +37,29 @@ class RegisterRequest(BaseModel):
     password: str
     confirm_password: str
 
-
 class LoginRequest(BaseModel):
     email: str
     password: str
-
 
 class ProfileUpdateRequest(BaseModel):
     nickname: str | None = None
     email: str | None = None
     password: str | None = None
 
+@router.post("/refresh")
+def refresh_token(body: RefreshRequest):
+    try:
+        response = supabase.auth.refresh_session(body.refresh_token)
+        if response.session is None:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+        return {
+            "token": response.session.access_token,
+            "refresh_token": response.session.refresh_token,
+        }
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Session refresh failed")
 
 @router.post("/register")
 def register(body: RegisterRequest):
