@@ -6,8 +6,32 @@ load_dotenv()
 
 ALLOWED_EMOTIONS = [
     "sad", "happy", "romantic", "scary", "excited",
-    "calm", "lonely", "angry", "tired", "bored"
+    "calm", "lonely", "angry", "tired", "bored",
+    "confused", "nostalgic", "empty", "frustrated", "regretful",
 ]
+
+EMOTION_KEYWORD_HINTS = {
+    "confused": [
+        "confused", "lost", "overwhelmed", "complicated", "unclear",
+        "복잡", "혼란", "모르겠", "정리", "갈피", "어지러",
+    ],
+    "nostalgic": [
+        "nostalgic", "miss", "memory", "past", "remember",
+        "그립", "그리움", "예전", "추억", "생각나", "떠올",
+    ],
+    "empty": [
+        "empty", "hollow", "meaningless", "pointless", "void",
+        "허무", "공허", "비어", "의미가 없", "무의미",
+    ],
+    "frustrated": [
+        "frustrated", "stuck", "blocked", "trapped",
+        "답답", "막힌", "안 풀", "풀리지", "꽉 막",
+    ],
+    "regretful": [
+        "regret", "regretful", "remorse", "should have",
+        "후회", "아쉬", "반성", "그때", "다시 했",
+    ],
+}
 
 LANGUAGE_MAP = {
     "ko": "Korean",
@@ -50,7 +74,21 @@ def _get_fallback_reason(language: str) -> str:
     return FALLBACK_REASONS["en"]
 
 
+def infer_emotion_from_keywords(raw_mood: str) -> str | None:
+    normalized = raw_mood.strip().lower()
+
+    for emotion, keywords in EMOTION_KEYWORD_HINTS.items():
+        if any(keyword in normalized for keyword in keywords):
+            return emotion
+
+    return None
+
+
 def parse_mood(raw_mood: str) -> str:
+    keyword_emotion = infer_emotion_from_keywords(raw_mood)
+    if keyword_emotion:
+        return keyword_emotion
+
     try:
         client = _get_client()
         response = client.chat.completions.create(
@@ -62,15 +100,21 @@ def parse_mood(raw_mood: str) -> str:
 A user described their mood as: "{raw_mood}"
 
 Classify this into EXACTLY one word from this list:
-sad, happy, romantic, scary, excited, calm, lonely, angry, tired, bored
+sad, happy, romantic, scary, excited, calm, lonely, angry, tired, bored,
+confused, nostalgic, empty, frustrated, regretful
 
 Rules:
 - Return ONLY the single word, nothing else
 - No punctuation, no explanation, no sentences
 - If unsure, pick the closest match
-- "empty", "lost", "hollow" → lonely
+- "confused", "lost", "overwhelmed", "thinking too much" -> confused
+- "nostalgic", "missing the past", "old memories", "thinking of someone" -> nostalgic
+- "empty", "hollow", "meaningless", "pointless" -> empty
+- "frustrated", "stuck", "blocked", "trapped", "can't breathe" -> frustrated
+- "regret", "should have", "remorse", "wish I had chosen differently" -> regretful
 - "exhausted", "drained" → tired
-- "furious", "frustrated" → angry
+- "furious", "rage" -> angry
+- Choose confused for unclear, tangled thoughts, but never because the user wants mystery or thriller.
 - Never return a word not in the list
 
 Your response must be a single word only.

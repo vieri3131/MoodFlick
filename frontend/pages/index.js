@@ -13,7 +13,25 @@ import UserMenu from '../components/UserMenu';
 import { API_URL } from '../lib/api';
 import { DEFAULT_LANGUAGE, getStoredLanguage, saveStoredLanguage } from '../lib/language';
 
-// 🎭 10가지 감정 테마 (4개국어 지원)
+// 🎭 감정 테마 (4개국어 지원)
+export const EMOTION_LABELS = {
+  happy: '행복',
+  sad: '슬픔',
+  angry: '분노',
+  romantic: '설렘',
+  scary: '무서움',
+  excited: '신남',
+  calm: '평온함',
+  lonely: '외로움',
+  tired: '피곤함',
+  bored: '지루함',
+  confused: '혼란',
+  nostalgic: '그리움',
+  empty: '허무함',
+  frustrated: '답답함',
+  regretful: '후회',
+};
+
 const EMOTION_THEMES = [
   { id: 'happy', genreId: 35, title: { 'ko-KR': '😊 기분 좋은 하루! 유쾌한 코미디', 'en-US': '😊 Feel Good Comedies', 'ja-JP': '😊 気分爽快！愉快なコメディ', 'zh-CN': '😊 心情愉悦！欢乐喜剧' } },
   { id: 'sad', genreId: 18, title: { 'ko-KR': '😢 마음을 건드리는 감성 드라마', 'en-US': '😢 Emotional & Touching', 'ja-JP': '😢 心に響く感動のドラマ', 'zh-CN': '😢 触动人心的情感剧情' } },
@@ -25,6 +43,11 @@ const EMOTION_THEMES = [
   { id: 'lonely', genreId: 10402, title: { 'ko-KR': '🌙 외로움을 달래주는 음악', 'en-US': '🌙 Comforting Music Movies', 'ja-JP': '🌙 孤独を癒す音楽・ミュージカル', 'zh-CN': '🌙 抚慰孤独的音乐电影' } },
   { id: 'tired', genreId: 16, title: { 'ko-KR': '🥱 지친 하루의 끝, 애니메이션', 'en-US': '🥱 Relaxing Animations', 'ja-JP': '🥱 疲れた一日の終わりに、アニメ', 'zh-CN': '🥱 疲惫的一天结束，治愈动画' } },
   { id: 'bored', genreId: 878, title: { 'ko-KR': '🍿 상상력 폭발, SF 판타지', 'en-US': '🍿 Fun Sci-Fi & Fantasy', 'ja-JP': '🍿 想像力の世界へ、SFファンタジー', 'zh-CN': '🍿 奇妙想象，科幻/奇幻' } },
+  { id: 'confused', genreId: 18, title: { 'ko-KR': '🌿 복잡한 생각을 쉬게 하는 힐링 드라마', 'en-US': '🌿 Gentle Movies for a Tangled Mind', 'ja-JP': '🌿 複雑な気持ちを休める癒しドラマ', 'zh-CN': '🌿 让复杂思绪休息的治愈剧情' } },
+  { id: 'nostalgic', genreId: 10749, title: { 'ko-KR': '📷 그리운 시간을 떠올리는 감성 영화', 'en-US': '📷 Nostalgic Romance & Drama', 'ja-JP': '📷 懐かしい時間を思い出す感性映画', 'zh-CN': '📷 唤起怀旧时光的情感电影' } },
+  { id: 'empty', genreId: 18, title: { 'ko-KR': '🕯 허무한 마음에 의미를 건네는 드라마', 'en-US': '🕯 Reflective Life Dramas', 'ja-JP': '🕯 空虚な心に意味を届けるドラマ', 'zh-CN': '🕯 为空虚内心带来意义的剧情片' } },
+  { id: 'frustrated', genreId: 28, title: { 'ko-KR': '⚡ 답답함을 풀어주는 통쾌한 액션', 'en-US': '⚡ Cathartic Action & Comebacks', 'ja-JP': '⚡ もどかしさを晴らす爽快アクション', 'zh-CN': '⚡ 释放郁闷的爽快动作' } },
+  { id: 'regretful', genreId: 18, title: { 'ko-KR': '🔁 후회를 딛고 다시 나아가는 성장 영화', 'en-US': '🔁 Stories of Growth and Second Chances', 'ja-JP': '🔁 後悔を越えて進む成長映画', 'zh-CN': '🔁 跨越后悔重新出发的成长电影' } },
 ];
 
 const PAGE_TEXT = {
