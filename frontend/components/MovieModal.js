@@ -115,7 +115,13 @@ export default function MovieModal({ movie, onClose, language }) {
     }
 
     try {
-      await axios.post(`${API_URL}${endpoint}`, { /* 기존 코드 유지 */ }, { headers: getAuthHeaders() });
+      await axios.post(`${API_URL}${endpoint}`, {
+        movie_id: movie.tmdbId || movie.id, // tmdbId가 없으면 id라도 보내도록 방어!
+        movie_title: movie.title || movie.originalTitle,
+        poster_path: movie.posterUrl || movie.poster_path || '/placeholder-poster.png'
+      }, { 
+        headers: getAuthHeaders() 
+      });
       
       const shouldOpenList = window.confirm(`${successMessage}\n\n${text.openList}`);
       
