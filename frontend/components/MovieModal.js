@@ -1,9 +1,7 @@
-import { useEffect } from 'react';
-import { useRouter } from 'next/router';
-import axios from 'axios'; // 👈 API 통신을 위해 axios 추가
-import { API_URL, getAuthHeaders, getAuthToken } from '../lib/api';
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import axios from 'axios';
+import { API_URL, getAuthHeaders, getAuthToken } from '../lib/api';
 
 const TEXT = {
   'ko-KR': {
