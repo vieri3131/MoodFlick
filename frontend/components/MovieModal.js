@@ -11,6 +11,8 @@ const TEXT = {
     serverError: '서버와 통신하는 중 오류가 발생했습니다.',
     trailerComingSoon: '트레일러 재생 기능은 향후 업데이트 예정입니다!',
     play: '재생',
+    loading: '로딩 중...',
+    closeTrailer: '예고편 닫기',
     watchlistTitle: '관심 목록',
     watchedTitle: '이미 본 영화',
     watchlistAdded: '✨ 관심 목록에 추가되었습니다!',
@@ -26,6 +28,8 @@ const TEXT = {
     serverError: 'An error occurred while contacting the server.',
     trailerComingSoon: 'Trailer playback is planned for a future update.',
     play: 'Play',
+    loading: 'Loading...',
+    closeTrailer: 'Close Trailer',
     watchlistTitle: 'Watchlist',
     watchedTitle: 'Watched Movies',
     watchlistAdded: '✨ Added to your watchlist!',
@@ -41,6 +45,8 @@ const TEXT = {
     serverError: 'サーバーとの通信中にエラーが発生しました。',
     trailerComingSoon: '予告編再生機能は今後のアップデートで追加予定です。',
     play: '再生',
+    loading: '読み込み中...',
+    closeTrailer: '予告編を閉じる',
     watchlistTitle: 'ウォッチリスト',
     watchedTitle: '視聴済み',
     watchlistAdded: '✨ ウォッチリストに追加しました！',
@@ -56,6 +62,8 @@ const TEXT = {
     serverError: '与服务器通信时发生错误。',
     trailerComingSoon: '预告片播放功能将在后续更新中推出。',
     play: '播放',
+    loading: '加载中...',
+    closeTrailer: '关闭预告片',
     watchlistTitle: '观看清单',
     watchedTitle: '已观看电影',
     watchlistAdded: '✨ 已添加到观看清单！',
@@ -201,7 +209,7 @@ export default function MovieModal({ movie, onClose, language }) {
                   }}
                 className="flex items-center gap-2 bg-white text-black px-4 sm:px-6 py-2 rounded-md font-bold text-base sm:text-lg hover:bg-white/80 transition-all active:scale-95">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                  {trailerLoading ? '로딩 중...' : showTrailer ? '예고편 닫기' : '재생'}
+                  {trailerLoading ? text.loading : showTrailer ? text.closeTrailer : text.play}
                   </button>
                 
                 {/* 2. 관심 목록 (Wishlist) 추가 버튼 */}
