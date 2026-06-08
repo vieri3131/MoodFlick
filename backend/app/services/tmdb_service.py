@@ -126,3 +126,33 @@ def get_movie_by_id(movie_id: int, language: str = "ko-KR") -> dict | None:
         return format_movie(movie)
     except Exception:
         return None
+
+async def get_movie_trailer(movie_id: int, language: str = "ko-KR") -> str:
+    """TMDB에서 영화의 유튜브 트레일러 URL을 가져옵니다."""
+    url = f"{TMDB_BASE_URL}/movie/{movie_id}/videos"
+    params = {
+        "api_key": TMDB_API_KEY,
+        "language": language
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, params=params)
+        
+        if response.status_code == 200:
+            videos = response.json().get("results", [])
+            # 1. 사이트가 YouTube이고 타입이 Trailer인 영상 찾기
+            for video in videos:
+                if video.get("site") == "YouTube" and video.get("type") == "Trailer":
+                    return video.get("key")
+            
+            # 2. 한국어 트레일러가 없으면 영어(기본) 트레일러로 다시 검색 (폴백 로직)
+            if language != "en-US":
+                params["language"] = "en-US"
+                fallback_resp = await client.get(url, params=params)
+                if fallback_resp.status_code == 200:
+                    fallback_videos = fallback_resp.json().get("results", [])
+                    for video in fallback_videos:
+                        if video.get("site") == "YouTube" and video.get("type") == "Trailer":
+                            return video.get("key")
+                            
+    return None

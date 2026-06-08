@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios'; // 👈 API 통신을 위해 axios 추가
 import { API_URL, getAuthHeaders, getAuthToken } from '../lib/api';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const TEXT = {
   'ko-KR': {
@@ -73,6 +75,25 @@ const TEXT = {
 export default function MovieModal({ movie, onClose, language }) {
   const router = useRouter();
   const text = TEXT[language] || TEXT['ko-KR'];
+  const [trailerUrl, setTrailerUrl] = useState(null);
+  const [showTrailer, setShowTrailer] = useState(false);
+
+  useEffect(() => {
+    if (movie?.tmdbId) {
+      const fetchTrailer = async () => {
+        try {
+          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+          const response = await axios.get(`${API_URL}/api/movies/${movie.tmdbId}/trailer`, {
+            params: { language: language }
+          });
+          setTrailerUrl(response.data.trailer_url);
+        } catch (error) {
+          console.error("트레일러를 불러오는 데 실패했습니다:", error);
+        }
+      };
+      fetchTrailer();
+    }
+  }, [movie, language]);
 
   // 모달이 열리면 배경(body) 스크롤 방지
   useEffect(() => {
@@ -142,15 +163,26 @@ export default function MovieModal({ movie, onClose, language }) {
           </svg>
         </button>
 
-        {/* 🎬 상단 미디어 영역 */}
+        {/* 🎬 상단 미디어 영역 (예고편 영상 / 배경 이미지) */}
         <div className="relative aspect-video w-full bg-slate-900">
-           <img src={bgImage} className="w-full h-full object-cover" alt={movie.title} />
-           
-           <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-transparent to-transparent" />
-           <div className="absolute inset-0 bg-gradient-to-r from-[#181818]/80 via-transparent to-transparent" />
-           
+          {/* 👇 showTrailer가 참이면 영상 띄우기, 거짓이면 기존 이미지 띄우기 */}
+          {showTrailer && trailerUrl ? (
+            <iframe 
+            className="w-full h-full object-cover pointer-events-auto z-20 relative"
+            src={`${trailerUrl}?autoplay=1&mute=0`} 
+            title={`${movie.title} Trailer`}
+            frameBorder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowFullScreen
+            ></iframe>
+          ) : (
+          <img src={bgImage} className="w-full h-full object-cover" alt={movie.title} />
+          )}
+          {/* 하단 자연스러운 페이드 아웃 그라데이션 (기존 코드 유지) */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-transparent to-transparent pointer-events-none" />
+          
            {/* 컨트롤 버튼 오버레이 */}
-           <div className="absolute bottom-[10%] left-6 sm:left-10 right-10">
+          <div className="absolute bottom-[10%] left-6 sm:left-10 right-10">
               <h1 className="text-3xl sm:text-5xl font-black text-white mb-6 drop-shadow-2xl line-clamp-2">
                 {movie.title}
               </h1>
@@ -158,12 +190,17 @@ export default function MovieModal({ movie, onClose, language }) {
               <div className="flex items-center gap-3">
                 {/* 1. 재생 (트레일러) 버튼 */}
                 <button 
-                  onClick={() => alert(text.trailerComingSoon)}
-                  className="flex items-center gap-2 bg-white text-black px-4 sm:px-6 py-2 rounded-md font-bold text-base sm:text-lg hover:bg-white/80 transition-all active:scale-95"
-                >
+                  onClick={() => {
+                    if (trailerUrl) {
+                      setShowTrailer(!showTrailer);
+                    } else {
+                      alert('이 영화는 제공되는 예고편이 없습니다 🥲');
+                  }
+                }}
+                className="flex items-center gap-2 bg-white text-black px-4 sm:px-6 py-2 rounded-md font-bold text-base sm:text-lg hover:bg-white/80 transition-all active:scale-95">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                  {text.play}
-                </button>
+                  {showTrailer ? '예고편 닫기' : '재생'} {/* 👈 텍스트도 상태에 따라 바뀌게 수정 */}
+                  </button>
                 
                 {/* 2. 관심 목록 (Wishlist) 추가 버튼 */}
                 <button 

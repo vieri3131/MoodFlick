@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query
 from app.services.tmdb_service import discover_movies, search_movies, get_movie_by_id
+from app.services.tmdb_service import get_movie_trailer
 
 router = APIRouter(tags=["recommend"])
 
@@ -46,3 +47,10 @@ def get_movie_detail(
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
     return movie
+
+@router.get("/{movie_id}/trailer")
+async def fetch_movie_trailer(movie_id: int, language: str = "ko-KR"):
+    trailer_key = await get_movie_trailer(movie_id, language)
+    if trailer_key:
+        return {"trailer_url": f"https://www.youtube.com/embed/{trailer_key}"}
+    return {"trailer_url": None}
