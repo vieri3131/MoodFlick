@@ -15,7 +15,6 @@ const TEXT = {
     watchedTitle: '이미 본 영화',
     watchlistAdded: '✨ 관심 목록에 추가되었습니다!',
     watchedAdded: '✔️ 시청 기록에 추가되었습니다!',
-    match: '98% 일치',
     noOverview: '상세 줄거리가 제공되지 않습니다.',
     aiReason: '✨ AI 추천 사유:',
     originalTitle: '원제:',
@@ -31,7 +30,6 @@ const TEXT = {
     watchedTitle: 'Watched Movies',
     watchlistAdded: '✨ Added to your watchlist!',
     watchedAdded: '✔️ Added to watched history!',
-    match: '98% Match',
     noOverview: 'No overview is available.',
     aiReason: '✨ AI recommendation reason:',
     originalTitle: 'Original title:',
@@ -47,7 +45,6 @@ const TEXT = {
     watchedTitle: '視聴済み',
     watchlistAdded: '✨ ウォッチリストに追加しました！',
     watchedAdded: '✔️ 視聴履歴に追加しました！',
-    match: '98% 一致',
     noOverview: 'あらすじは提供されていません。',
     aiReason: '✨ AIおすすめ理由:',
     originalTitle: '原題:',
@@ -63,7 +60,6 @@ const TEXT = {
     watchedTitle: '已观看电影',
     watchlistAdded: '✨ 已添加到观看清单！',
     watchedAdded: '✔️ 已添加到观看记录！',
-    match: '98% 匹配',
     noOverview: '暂无详细剧情。',
     aiReason: '✨ AI 推荐理由:',
     originalTitle: '原标题:',
@@ -74,6 +70,7 @@ export default function MovieModal({ movie, onClose, language }) {
   const router = useRouter();
   const text = TEXT[language] || TEXT['ko-KR'];
   const [trailerUrl, setTrailerUrl] = useState(null);
+  const [trailerLoading, setTrailerLoading] = useState(true);
   const [showTrailer, setShowTrailer] = useState(false);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [isWatched, setIsWatched] = useState(false);
@@ -81,6 +78,7 @@ export default function MovieModal({ movie, onClose, language }) {
   useEffect(() => {
     if (movie?.tmdbId) {
       const fetchTrailer = async () => {
+        setTrailerLoading(true);
         try {
           const response = await axios.get(`${API_URL}/api/movies/${movie.tmdbId}/trailer`, {
             params: { language: language }
@@ -88,6 +86,8 @@ export default function MovieModal({ movie, onClose, language }) {
           setTrailerUrl(response.data.trailer_url);
         } catch (error) {
           console.error("트레일러를 불러오는 데 실패했습니다:", error);
+        } finally {
+          setTrailerLoading(false);
         }
       };
       fetchTrailer();
@@ -189,17 +189,19 @@ export default function MovieModal({ movie, onClose, language }) {
               
               <div className="flex items-center gap-3">
                 {/* 1. 재생 (트레일러) 버튼 */}
-                <button 
+                <button
                   onClick={() => {
-                    if (trailerUrl) {
+                    if (trailerLoading) {
+                      return;
+                    } else if (trailerUrl) {
                       setShowTrailer(!showTrailer);
                     } else {
                       alert('이 영화는 제공되는 예고편이 없습니다 🥲');
-                  }
-                }}
+                    }
+                  }}
                 className="flex items-center gap-2 bg-white text-black px-4 sm:px-6 py-2 rounded-md font-bold text-base sm:text-lg hover:bg-white/80 transition-all active:scale-95">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                  {showTrailer ? '예고편 닫기' : '재생'} {/* 👈 텍스트도 상태에 따라 바뀌게 수정 */}
+                  {trailerLoading ? '로딩 중...' : showTrailer ? '예고편 닫기' : '재생'}
                   </button>
                 
                 {/* 2. 관심 목록 (Wishlist) 추가 버튼 */}
@@ -257,7 +259,6 @@ export default function MovieModal({ movie, onClose, language }) {
         <div className="p-6 sm:p-10 grid grid-cols-1 md:grid-cols-3 gap-8 text-white">
            <div className="col-span-2 space-y-5">
               <div className="flex items-center gap-3 sm:gap-4 text-sm sm:text-base font-semibold flex-wrap">
-                 <span className="text-green-500">{text.match}</span>
                  <span>{movie.releaseDate?.substring(0, 4)}</span>
                  <span className="border border-white/40 px-1.5 py-0.5 rounded text-xs text-white/70">HD</span>
                  <span className="flex items-center gap-1 text-yellow-500">
