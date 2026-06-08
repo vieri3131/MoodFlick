@@ -48,7 +48,7 @@ def get_movie_detail(
         raise HTTPException(status_code=404, detail="Movie not found")
     return movie
 
-@router.get("/{movie_id}/trailer")
+@router.get("/movies/{movie_id}/trailer")
 async def fetch_movie_trailer(movie_id: int, language: str = "ko-KR"):
     trailer_key = await get_movie_trailer(movie_id, language)
     if trailer_key:
