@@ -1,4 +1,5 @@
 import os
+import random
 import requests
 import httpx
 from dotenv import load_dotenv
@@ -26,10 +27,15 @@ def discover_movies(
     params = {
         "api_key": TMDB_API_KEY,
         "language": language,
-        "sort_by": "vote_average.desc",
+        "sort_by": random.choice([
+            "vote_average.desc",
+            "popularity.desc",
+            "vote_count.desc",
+            "primary_release_date.desc",
+        ]),
         "vote_count.gte": 50,
         "vote_average.gte": min_rating,
-        "page": page,
+        "page": random.randint(1, 3),
     }
 
     if genre_ids:
@@ -45,7 +51,9 @@ def discover_movies(
         response.raise_for_status()
         data = response.json()
         movies = data.get("results", [])
-        return [format_movie(movie) for movie in movies]
+        result = [format_movie(movie) for movie in movies]
+        random.shuffle(result)
+        return result
     except requests.exceptions.Timeout:
         raise RuntimeError("TMDB API 요청 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.")
     except requests.exceptions.HTTPError as e:
