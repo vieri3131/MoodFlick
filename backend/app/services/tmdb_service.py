@@ -1,5 +1,6 @@
 import os
 import requests
+import httpx
 from dotenv import load_dotenv
 
 load_dotenv()

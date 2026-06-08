@@ -77,6 +77,8 @@ export default function MovieModal({ movie, onClose, language }) {
   const text = TEXT[language] || TEXT['ko-KR'];
   const [trailerUrl, setTrailerUrl] = useState(null);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [isWatchlisted, setIsWatchlisted] = useState(false);
+  const [isWatched, setIsWatched] = useState(false);
 
   useEffect(() => {
     if (movie?.tmdbId) {
@@ -108,7 +110,6 @@ export default function MovieModal({ movie, onClose, language }) {
 
   // 🚀 백엔드 API 호출 공통 함수 (관심 목록 / 시청 기록)
   const handleAddToList = async (endpoint, successMessage) => {
-    // 1. 로컬 스토리지에서 로그인 토큰 꺼내기
     const token = getAuthToken();
     if (!token) {
       alert(text.loginRequired);
@@ -116,20 +117,16 @@ export default function MovieModal({ movie, onClose, language }) {
     }
 
     try {
-      // 2. 백엔드로 POST 요청 보내기
-      await axios.post(`${API_URL}${endpoint}`, {
-        movie_id: movie.tmdbId,
-        movie_title: movie.title,
-        poster_path: movie.posterUrl || '/placeholder-poster.png'
-      }, {
-        headers: getAuthHeaders()
-      });
+      await axios.post(`${API_URL}${endpoint}`, { /* 기존 코드 유지 */ }, { headers: getAuthHeaders() });
       
-      const shouldOpenList = window.confirm(
-        `${successMessage}\n\n${text.openList}`
-      );
+      const shouldOpenList = window.confirm(`${successMessage}\n\n${text.openList}`);
+      
       if (shouldOpenList) {
         router.push(endpoint === '/api/watchlist' ? '/watchlist' : '/watched');
+      } else {
+        // 👇 2. 목록으로 이동하지 않고 머무를 경우 아이콘 상태를 true로 변경!
+        if (endpoint === '/api/watchlist') setIsWatchlisted(true);
+        if (endpoint === '/api/watch-history') setIsWatched(true);
       }
     } catch (error) {
       // 백엔드에서 409(Conflict - 중복) 에러를 보냈을 경우 처리
@@ -204,29 +201,53 @@ export default function MovieModal({ movie, onClose, language }) {
                 
                 {/* 2. 관심 목록 (Wishlist) 추가 버튼 */}
                 <button 
-                  // 👇 onClick에 백엔드 API 연결
-                  onClick={() => handleAddToList('/api/watchlist', text.watchlistAdded)}
-                  className="p-2 border-2 border-white/50 hover:border-white rounded-full bg-[#2a2a2a]/60 text-white transition-all active:scale-95 group" 
-                  title={text.watchlistTitle}
+                onClick={() => handleAddToList('/api/watchlist', text.watchlistAdded)}
+                // 👇 isWatchlisted 상태에 따라 보라색 배경으로 바뀜
+                className={`p-2 border-2 rounded-full transition-all active:scale-95 group ${
+                  isWatchlisted 
+                  ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30' 
+                  : 'border-white/50 hover:border-white bg-[#2a2a2a]/60 text-white'
+                }`}
+                title={text.watchlistTitle}
                 >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
-                
-                {/* 3. 시청 기록 (Watched) 체크 버튼 */}
-                <button 
-                  // 👇 onClick에 백엔드 API 연결
-                  onClick={() => handleAddToList('/api/watch-history', text.watchedAdded)}
-                  className="p-2 border-2 border-white/50 hover:border-white rounded-full bg-[#2a2a2a]/60 text-white transition-all active:scale-95" 
-                  title={text.watchedTitle}
-                >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </button>
+                  {isWatchlisted ? (
+                    // 추가 완료 시: 꽉 찬 하트 아이콘
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                      </svg>
+                      ) : (
+                        // 기본: 플러스 아이콘
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                        )}
+                        </button>
+                        
+                        {/* 3. 시청 기록 (Watched) 체크 버튼 */}
+                        <button 
+                        onClick={() => handleAddToList('/api/watch-history', text.watchedAdded)}
+                        // 👇 isWatched 상태에 따라 파란색 배경으로 바뀜
+                        className={`p-2 border-2 rounded-full transition-all active:scale-95 ${
+                          isWatched 
+                          ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30' 
+                          : 'border-white/50 hover:border-white bg-[#2a2a2a]/60 text-white'
+                        }`}
+                        title={text.watchedTitle}
+                        >
+                          {isWatched ? (
+                            // 추가 완료 시: 눈(Eye) 모양 아이콘
+                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                              </svg>
+                              ) : (
+                                // 기본: 체크 아이콘
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                                </button>
               </div>
-           </div>
+            </div>
         </div>
 
         {/* 📝 하단 상세 정보 영역 */}
