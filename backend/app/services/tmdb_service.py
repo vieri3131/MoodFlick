@@ -37,7 +37,7 @@ def discover_movies(
     elif genre_id:
         params["with_genres"] = genre_id
 
-    if country and country.upper() != "ALL":
+    if country and country.upper() != "ALL" and "," not in country:
         params["with_origin_country"] = country
 
     try:
