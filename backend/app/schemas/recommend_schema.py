@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class RecommendRequest(BaseModel):
-    raw_mood: str #replace emotion with rawmood
+    raw_mood: str = Field(..., min_length=1, max_length=500)
     country: str = "KR"
     language: str = "ko-KR"
