@@ -78,29 +78,48 @@ export default function MovieModal({ movie, onClose, language }) {
   const router = useRouter();
   const text = TEXT[language] || TEXT['ko-KR'];
   const [trailerUrl, setTrailerUrl] = useState(null);
-  const [trailerLoading, setTrailerLoading] = useState(true);
   const [showTrailer, setShowTrailer] = useState(false);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [isWatched, setIsWatched] = useState(false);
 
+  // 1. 기존 트레일러 URL 가져오기
   useEffect(() => {
     if (movie?.tmdbId) {
       const fetchTrailer = async () => {
-        setTrailerLoading(true);
         try {
-          const response = await axios.get(`${API_URL}/api/movies/${movie.tmdbId}/trailer`, {
+          const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+          const response = await axios.get(`${API_BASE}/api/movies/${movie.tmdbId}/trailer`, {
             params: { language: language }
           });
           setTrailerUrl(response.data.trailer_url);
         } catch (error) {
           console.error("트레일러를 불러오는 데 실패했습니다:", error);
-        } finally {
-          setTrailerLoading(false);
         }
       };
       fetchTrailer();
     }
   }, [movie, language]);
+
+  // 2. 모달이 열릴 때 사용자의 '관심/시청 목록'을 조회하여 아이콘 색상을 미리 칠해둡니다.
+  useEffect(() => {
+    const checkUserLists = async () => {
+      const token = getAuthToken();
+      if (!token || !movie) return;
+      try {
+        const headers = getAuthHeaders();
+        const [wlRes, whRes] = await Promise.all([
+          axios.get(`${API_URL}/api/watchlist`, { headers }),
+          axios.get(`${API_URL}/api/watch-history`, { headers })
+        ]);
+        const movieId = movie.tmdbId || movie.id;
+        setIsWatchlisted(wlRes.data.some(item => item.movie_id === movieId));
+        setIsWatched(whRes.data.some(item => item.movie_id === movieId));
+      } catch (error) {
+        console.error("사용자 목록을 불러오지 못했습니다.", error);
+      }
+    };
+    checkUserLists();
+  }, [movie]);
 
   // 모달이 열리면 배경(body) 스크롤 방지
   useEffect(() => {
@@ -109,44 +128,53 @@ export default function MovieModal({ movie, onClose, language }) {
   }, []);
 
   if (!movie) return null;
-
-  // 가로 배경이 없으면 세로 포스터로 대체
   const bgImage = movie.backdropUrl || movie.posterUrl || '/placeholder-poster.png';
 
-  // 🚀 백엔드 API 호출 공통 함수 (관심 목록 / 시청 기록)
-  const handleAddToList = async (endpoint, successMessage) => {
+  // 3. 관심 목록 (Wishlist) 등록/해제 토글 함수
+  const toggleWatchlist = async () => {
     const token = getAuthToken();
-    if (!token) {
-      alert(text.loginRequired);
-      return;
-    }
+    if (!token) return alert(text.loginRequired);
+    const movieId = movie.tmdbId || movie.id;
 
     try {
-      await axios.post(`${API_URL}${endpoint}`, {
-        movie_id: movie.tmdbId || movie.id, // tmdbId가 없으면 id라도 보내도록 방어!
-        movie_title: movie.title || movie.originalTitle,
-        poster_path: movie.posterUrl || movie.poster_path || '/placeholder-poster.png'
-      }, { 
-        headers: getAuthHeaders() 
-      });
-      
-      const shouldOpenList = window.confirm(`${successMessage}\n\n${text.openList}`);
-      
-      if (shouldOpenList) {
-        router.push(endpoint === '/api/watchlist' ? '/watchlist' : '/watched');
+      if (isWatchlisted) {
+        // 이미 등록되어 있으면 해제 (DELETE)
+        await axios.delete(`${API_URL}/api/watchlist/${movieId}`, { headers: getAuthHeaders() });
+        setIsWatchlisted(false);
       } else {
-        // 👇 2. 목록으로 이동하지 않고 머무를 경우 아이콘 상태를 true로 변경!
-        if (endpoint === '/api/watchlist') setIsWatchlisted(true);
-        if (endpoint === '/api/watch-history') setIsWatched(true);
+        // 등록되어 있지 않으면 추가 (POST)
+        await axios.post(`${API_URL}/api/watchlist`, {
+          movie_id: movieId,
+          movie_title: movie.title || movie.originalTitle,
+          poster_path: movie.posterUrl || movie.poster_path || '/placeholder-poster.png'
+        }, { headers: getAuthHeaders() });
+        setIsWatchlisted(true);
       }
     } catch (error) {
-      // 백엔드에서 409(Conflict - 중복) 에러를 보냈을 경우 처리
-      if (error.response && error.response.status === 409) {
-        alert(text.duplicate);
+      if (error.response?.status === 409) setIsWatchlisted(true);
+    }
+  };
+
+  // 4. 시청 기록 (Watched) 등록/해제 토글 함수
+  const toggleWatched = async () => {
+    const token = getAuthToken();
+    if (!token) return alert(text.loginRequired);
+    const movieId = movie.tmdbId || movie.id;
+
+    try {
+      if (isWatched) {
+        await axios.delete(`${API_URL}/api/watch-history/${movieId}`, { headers: getAuthHeaders() });
+        setIsWatched(false);
       } else {
-        console.error('API 에러:', error);
-        alert(text.serverError);
+        await axios.post(`${API_URL}/api/watch-history`, {
+          movie_id: movieId,
+          movie_title: movie.title || movie.originalTitle,
+          poster_path: movie.posterUrl || movie.poster_path || '/placeholder-poster.png'
+        }, { headers: getAuthHeaders() });
+        setIsWatched(true);
       }
+    } catch (error) {
+      if (error.response?.status === 409) setIsWatched(true);
     }
   };
 
@@ -172,95 +200,79 @@ export default function MovieModal({ movie, onClose, language }) {
         </button>
 
         {/* 🎬 상단 미디어 영역 (예고편 영상 / 배경 이미지) */}
-        <div className="relative aspect-video w-full bg-slate-900">
-          {/* 👇 showTrailer가 참이면 영상 띄우기, 거짓이면 기존 이미지 띄우기 */}
+        <div className="relative aspect-video w-full bg-slate-900 overflow-hidden">
+          
+          {/* 👇 영상은 맨 뒤(z-0)에 깔고, 사용자가 영상을 클릭해서 멈추는 것을 방지(pointer-events-none) */}
           {showTrailer && trailerUrl ? (
             <iframe 
-            className="w-full h-full object-cover pointer-events-auto z-20 relative"
-            src={`${trailerUrl}?autoplay=1&mute=0`} 
-            title={`${movie.title} Trailer`}
-            frameBorder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowFullScreen
+              className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+              src={`${trailerUrl}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0`} 
+              title={`${movie.title} Trailer`}
+              frameBorder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowFullScreen
             ></iframe>
           ) : (
-          <img src={bgImage} className="w-full h-full object-cover" alt={movie.title} />
+            <img src={bgImage} className="w-full h-full object-cover z-0 relative" alt={movie.title} />
           )}
-          {/* 하단 자연스러운 페이드 아웃 그라데이션 (기존 코드 유지) */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-transparent to-transparent pointer-events-none" />
+
+          {/* 👇 자연스러운 페이드 아웃 그라데이션 (z-10으로 영상 위에 덮기) */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-[#181818]/40 to-transparent pointer-events-none z-10" />
           
-           {/* 컨트롤 버튼 오버레이 */}
-          <div className="absolute bottom-[10%] left-6 sm:left-10 right-10">
+          {/* 👇 컨트롤 버튼 오버레이 (z-20으로 맨 위로 꺼내기) */}
+          <div className="absolute bottom-[10%] left-6 sm:left-10 right-10 z-20">
               <h1 className="text-3xl sm:text-5xl font-black text-white mb-6 drop-shadow-2xl line-clamp-2">
                 {movie.title}
               </h1>
               
               <div className="flex items-center gap-3">
                 {/* 1. 재생 (트레일러) 버튼 */}
-                <button
-                  onClick={() => {
-                    if (trailerLoading) {
-                      return;
-                    } else if (trailerUrl) {
-                      setShowTrailer(!showTrailer);
-                    } else {
-                      alert('이 영화는 제공되는 예고편이 없습니다 🥲');
-                    }
-                  }}
-                className="flex items-center gap-2 bg-white text-black px-4 sm:px-6 py-2 rounded-md font-bold text-base sm:text-lg hover:bg-white/80 transition-all active:scale-95">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                  {trailerLoading ? text.loading : showTrailer ? text.closeTrailer : text.play}
-                  </button>
-                
-                {/* 2. 관심 목록 (Wishlist) 추가 버튼 */}
                 <button 
-                onClick={() => handleAddToList('/api/watchlist', text.watchlistAdded)}
-                // 👇 isWatchlisted 상태에 따라 보라색 배경으로 바뀜
-                className={`p-2 border-2 rounded-full transition-all active:scale-95 group ${
-                  isWatchlisted 
-                  ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30' 
-                  : 'border-white/50 hover:border-white bg-[#2a2a2a]/60 text-white'
-                }`}
-                title={text.watchlistTitle}
+                  onClick={() => {
+                    if (trailerUrl) setShowTrailer(!showTrailer);
+                    else alert('이 영화는 제공되는 예고편이 없습니다 🥲');
+                  }}
+                  className="flex items-center gap-2 bg-white text-black px-4 sm:px-6 py-2 rounded-md font-bold text-base sm:text-lg hover:bg-white/80 transition-all active:scale-95"
+                >
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                  {showTrailer ? '예고편 닫기' : '재생'}
+                </button>
+                
+                {/* 2. 관심 목록 (Wishlist) 추가/해제 버튼 */}
+                <button 
+                  onClick={toggleWatchlist} // 👈 토글 함수 연결
+                  className={`p-2 border-2 rounded-full transition-all active:scale-95 group ${
+                    isWatchlisted 
+                      ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30' 
+                      : 'border-white/50 hover:border-white bg-[#2a2a2a]/60 text-white'
+                  }`}
+                  title={text.watchlistTitle}
                 >
                   {isWatchlisted ? (
-                    // 추가 완료 시: 꽉 찬 하트 아이콘
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                      </svg>
-                      ) : (
-                        // 기본: 플러스 아이콘
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                        )}
-                        </button>
-                        
-                        {/* 3. 시청 기록 (Watched) 체크 버튼 */}
-                        <button 
-                        onClick={() => handleAddToList('/api/watch-history', text.watchedAdded)}
-                        // 👇 isWatched 상태에 따라 파란색 배경으로 바뀜
-                        className={`p-2 border-2 rounded-full transition-all active:scale-95 ${
-                          isWatched 
-                          ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30' 
-                          : 'border-white/50 hover:border-white bg-[#2a2a2a]/60 text-white'
-                        }`}
-                        title={text.watchedTitle}
-                        >
-                          {isWatched ? (
-                            // 추가 완료 시: 눈(Eye) 모양 아이콘
-                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                              </svg>
-                              ) : (
-                                // 기본: 체크 아이콘
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                                </button>
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
+                  ) : (
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                  )}
+                </button>
+                
+                {/* 3. 시청 기록 (Watched) 추가/해제 버튼 */}
+                <button 
+                  onClick={toggleWatched} // 👈 토글 함수 연결
+                  className={`p-2 border-2 rounded-full transition-all active:scale-95 ${
+                    isWatched 
+                      ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30' 
+                      : 'border-white/50 hover:border-white bg-[#2a2a2a]/60 text-white'
+                  }`}
+                  title={text.watchedTitle}
+                >
+                  {isWatched ? (
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" /></svg>
+                  ) : (
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  )}
+                </button>
               </div>
-            </div>
+           </div>
         </div>
 
         {/* 📝 하단 상세 정보 영역 */}
