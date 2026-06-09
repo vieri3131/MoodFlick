@@ -1,5 +1,5 @@
 import os
-from groq import Groq
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -47,17 +47,15 @@ FALLBACK_REASONS = {
     "zh": "这部电影非常适合您目前的心情。",
 }
 
-_groq_client = None
+_gemini_model = None
 
 
-def _get_client() -> Groq:
-    global _groq_client
-    if _groq_client is None:
-        api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            raise RuntimeError("GROQ_API_KEY가 설정되어 있지 않습니다.")
-        _groq_client = Groq(api_key=api_key)
-    return _groq_client
+def _get_model():
+    global _gemini_model
+    if _gemini_model is None:
+        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+        _gemini_model = genai.GenerativeModel("gemini-2.5-flash")
+    return _gemini_model
 
 
 def _get_language_instruction(language: str) -> str:
@@ -90,13 +88,8 @@ def parse_mood(raw_mood: str) -> str:
         return keyword_emotion
 
     try:
-        client = _get_client()
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"""
+        model = _get_model()
+        prompt = f"""
 A user described their mood as: "{raw_mood}"
 
 Classify this into EXACTLY one word from this list:
@@ -119,13 +112,8 @@ Rules:
 
 Your response must be a single word only.
 """
-                }
-            ],
-            temperature=0,
-            max_tokens=10
-        )
-
-        result = response.choices[0].message.content.strip().lower()
+        response = model.generate_content(prompt, generation_config=genai.GenerationConfig(temperature=0.0, max_output_tokens=10))
+        result = response.text.strip().lower()
         print(f"Groq mood output: '{result}'")
 
         if result not in ALLOWED_EMOTIONS:
@@ -144,13 +132,8 @@ def generate_reason(raw_mood: str, movie_title: str, language: str) -> str:
     fallback = _get_fallback_reason(language)
 
     try:
-        client = _get_client()
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"""
+        model = _get_model()
+        prompt = f"""
 User's mood: "{raw_mood}"
 Movie title: "{movie_title}"
 
@@ -163,13 +146,8 @@ Rules:
 - Sound warm and human, not robotic
 - Return only the sentence, nothing else
 """
-                }
-            ],
-            temperature=0.7,
-            max_tokens=60
-        )
-
-        return response.choices[0].message.content.strip()
+        response = model.generate_content(prompt, generation_config=genai.GenerationConfig(temperature=0.7, max_output_tokens=60))
+        return response.text.strip()
 
     except Exception as e:
         print(f"Groq error in generate_reason: {e}")

@@ -7,10 +7,15 @@ from types import SimpleNamespace
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_DIR))
 
-sys.modules.setdefault(
-    "groq",
-    SimpleNamespace(Groq=lambda *args, **kwargs: None),
+_mock_genai = SimpleNamespace(
+    configure=lambda *args, **kwargs: None,
+    GenerativeModel=lambda *args, **kwargs: SimpleNamespace(
+        generate_content=lambda *a, **kw: SimpleNamespace(text="")
+    ),
+    GenerationConfig=lambda *args, **kwargs: None,
 )
+sys.modules.setdefault("google", SimpleNamespace(generativeai=_mock_genai))
+sys.modules.setdefault("google.generativeai", _mock_genai)
 sys.modules.setdefault(
     "dotenv",
     SimpleNamespace(load_dotenv=lambda *args, **kwargs: None),
