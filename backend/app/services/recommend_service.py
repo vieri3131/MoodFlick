@@ -271,7 +271,8 @@ def recommend_movies(emotion: str, raw_mood: str, country: str, language: str):
         )
         merge_unique_movies(movies, fallback_movies)
 
-    if len(movies) == 0 and country:
+    is_multi_country = country and "," in country
+    if len(movies) == 0 and country and not is_multi_country:
         return build_recommend_response(
             success=False,
             message="선택한 국가에서 현재 감정에 맞는 영화를 찾지 못했습니다. 국가 필터를 변경하거나 다른 감정을 입력해 주세요.",
