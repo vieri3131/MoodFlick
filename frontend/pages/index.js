@@ -122,7 +122,7 @@ export default function Home() {
       const targetCountry = country.includes('ALL') ? '' : country.join(',');
       const response = await axios.post(`${API_URL}/api/recommend`, {
         raw_mood: rawMood, country: targetCountry, language: language
-      });
+      }, { timeout: 60000 });
       if (response.data.success) {
         setMovies(response.data.movies);
       } else {
