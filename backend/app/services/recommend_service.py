@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.services.tmdb_service import discover_movies
 from app.services.ai_service import generate_reason
 
