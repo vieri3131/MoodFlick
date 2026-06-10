@@ -114,7 +114,7 @@ Your response must be a single word only.
 """
         response = model.generate_content(prompt, generation_config=genai.GenerationConfig(temperature=0.0, max_output_tokens=10))
         result = response.text.strip().lower()
-        print(f"Groq mood output: '{result}'")
+        print(f"Gemini mood output: '{result}'")
 
         if result not in ALLOWED_EMOTIONS:
             print(f"Not in list, defaulting to calm")
@@ -123,7 +123,7 @@ Your response must be a single word only.
         return result
 
     except Exception as e:
-        print(f"Groq error in parse_mood: {e}")
+        print(f"Gemini error in parse_mood: {e}")
         return "calm"
 
 
@@ -150,5 +150,5 @@ Rules:
         return response.text.strip()
 
     except Exception as e:
-        print(f"Groq error in generate_reason: {e}")
+        print(f"Gemini error in generate_reason: {e}")
         return fallback
