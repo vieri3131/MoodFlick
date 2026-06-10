@@ -42,6 +42,6 @@ app.include_router(watchlist_router, prefix="/api")
 app.include_router(watch_history_router, prefix="/api")
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
     return {"message": "MoodFlick API is perfectly running!"}
