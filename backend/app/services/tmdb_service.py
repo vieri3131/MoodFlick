@@ -46,11 +46,8 @@ def discover_movies(
     elif genre_id:
         params["with_genres"] = genre_id
 
-    if country and country.upper() != "ALL":
-        if "," in country:
-            params["with_origin_country"] = country.replace(",", "|")
-        else:
-            params["with_origin_country"] = country
+    if country and country.upper() != "ALL" and "," not in country:
+        params["with_origin_country"] = country
 
     try:
         response = requests.get(url, params=params, timeout=10)
