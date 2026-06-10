@@ -1,4 +1,5 @@
 import os
+import threading
 import google.generativeai as genai
 from dotenv import load_dotenv
 
@@ -48,14 +49,16 @@ FALLBACK_REASONS = {
 }
 
 _gemini_model = None
+_model_lock = threading.Lock()
 
 
 def _get_model():
     global _gemini_model
-    if _gemini_model is None:
-        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-        _gemini_model = genai.GenerativeModel("gemini-2.5-flash")
-    return _gemini_model
+    with _model_lock:
+        if _gemini_model is None:
+            genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+            _gemini_model = genai.GenerativeModel("gemini-2.5-flash")
+        return _gemini_model
 
 
 def _get_language_instruction(language: str) -> str:
