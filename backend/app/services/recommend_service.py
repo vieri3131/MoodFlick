@@ -179,11 +179,18 @@ def build_unsupported_emotion_response(emotion: str, country: str, language: str
 
 
 def add_recommend_reason(movies: list[dict], raw_mood: str, language: str) -> list[dict]:
-    result = []
-    for movie in movies:
+    def enrich(movie):
         reason = generate_reason(raw_mood, movie["title"], language)
-        result.append({**movie, "recommendReason": reason})
-    return result
+        return {**movie, "recommendReason": reason}
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = {executor.submit(enrich, movie): i for i, movie in enumerate(movies)}
+        results = [None] * len(movies)
+        for future in as_completed(futures):
+            index = futures[future]
+            results[index] = future.result()
+
+    return results
 
 
 def merge_unique_movies(
