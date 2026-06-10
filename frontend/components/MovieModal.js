@@ -78,6 +78,7 @@ export default function MovieModal({ movie, onClose, language }) {
   const router = useRouter();
   const text = TEXT[language] || TEXT['ko-KR'];
   const [trailerUrl, setTrailerUrl] = useState(null);
+  const [trailerLoading, setTrailerLoading] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [isWatched, setIsWatched] = useState(false);
@@ -94,8 +95,11 @@ export default function MovieModal({ movie, onClose, language }) {
           setTrailerUrl(response.data.trailer_url);
         } catch (error) {
           console.error("트레일러를 불러오는 데 실패했습니다:", error);
+        } finally {
+          setTrailerLoading(false);
         }
       };
+      setTrailerUrl(null); setTrailerLoading(true);
       fetchTrailer();
     }
   }, [movie, language]);
@@ -229,13 +233,14 @@ export default function MovieModal({ movie, onClose, language }) {
                 {/* 1. 재생 (트레일러) 버튼 */}
                 <button 
                   onClick={() => {
+                    if (trailerLoading) return;
                     if (trailerUrl) setShowTrailer(!showTrailer);
                     else alert('이 영화는 제공되는 예고편이 없습니다 🥲');
                   }}
                   className="flex items-center gap-2 bg-white text-black px-4 sm:px-6 py-2 rounded-md font-bold text-base sm:text-lg hover:bg-white/80 transition-all active:scale-95"
                 >
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                  {showTrailer ? '예고편 닫기' : '재생'}
+                  {trailerLoading ? '...' : showTrailer ? text.closeTrailer : text.play}
                 </button>
                 
                 {/* 2. 관심 목록 (Wishlist) 추가/해제 버튼 */}
