@@ -24,44 +24,50 @@ def discover_movies(
 
     url = f"{TMDB_BASE_URL}/discover/movie"
 
-    params = {
+    sort_orders = [
+        "vote_average.desc",
+        "popularity.desc",
+        "vote_count.desc",
+        "primary_release_date.desc",
+    ]
+
+    base_params = {
         "api_key": TMDB_API_KEY,
         "language": language,
-        "sort_by": random.choice([
-            "vote_average.desc",
-            "popularity.desc",
-            "vote_count.desc",
-            "primary_release_date.desc",
-        ]),
         "include_adult": False,
         "certification_country": "US",
         "certification.lte": "R",
         "vote_count.gte": 50,
         "vote_average.gte": min_rating,
-        "page": random.randint(1, 3),
     }
 
     if genre_ids:
-        params["with_genres"] = ",".join(str(id) for id in genre_ids)
+        base_params["with_genres"] = ",".join(str(id) for id in genre_ids)
     elif genre_id:
-        params["with_genres"] = genre_id
+        base_params["with_genres"] = genre_id
 
     if country and country.upper() != "ALL" and "," not in country:
-        params["with_origin_country"] = country
-    try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        movies = data.get("results", [])
-        result = [format_movie(movie) for movie in movies]
-        random.shuffle(result)
-        return result
-    except requests.exceptions.Timeout:
-        raise RuntimeError("TMDB API 요청 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.")
-    except requests.exceptions.HTTPError as e:
-        raise RuntimeError(f"TMDB API 오류: {e.response.status_code}")
-    except Exception as e:
-        raise RuntimeError(f"영화 데이터를 불러오는 중 오류가 발생했습니다: {str(e)}")
+        base_params["with_origin_country"] = country
+
+    all_movies = []
+    seen_ids = set()
+
+    for sort_by in sort_orders:
+        try:
+            params = {**base_params, "sort_by": sort_by, "page": random.randint(1, 3)}
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            results = response.json().get("results", [])
+            for movie in results:
+                mid = movie.get("id")
+                if mid and mid not in seen_ids:
+                    seen_ids.add(mid)
+                    all_movies.append(format_movie(movie))
+        except Exception:
+            continue
+
+    random.shuffle(all_movies)
+    return all_movies
 
 
 def search_movies(query: str, language: str = "ko-KR"):
