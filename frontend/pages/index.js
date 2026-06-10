@@ -61,7 +61,7 @@ export default function Home() {
   const [movies, setMovies] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [country, setCountry] = useState(['ALL']);
+  const [country, setCountry] = useState('ALL');
   const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
   const [randomThemes, setRandomThemes] = useState([]);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -119,7 +119,7 @@ export default function Home() {
     setLoading(true);
     setHasSearched(true);
     try {
-      const targetCountry = country.includes('ALL') ? '' : country.join(',');
+      const targetCountry = country === 'ALL' ? '' : country;
       const response = await axios.post(`${API_URL}/api/recommend`, {
         raw_mood: rawMood, country: targetCountry, language: language
       }, { timeout: 60000 });
