@@ -2,7 +2,6 @@ from app.services.tmdb_service import discover_movies
 from app.services.ai_service import generate_reason
 
 RECOMMENDATION_LIMIT = 8
-DEFAULT_RECOMMEND_REASON = "입력한 감정과 분위기에 어울리는 영화입니다."
 SUCCESS_MESSAGE = "추천 결과를 불러왔습니다."
 EMPTY_RESULT_MESSAGE = "검색 결과가 없습니다. 감정 표현이나 국가 필터를 변경해 주세요."
 UNSUPPORTED_EMOTION_MESSAGE = "지원하지 않는 감정값입니다."
