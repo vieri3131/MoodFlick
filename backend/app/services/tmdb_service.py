@@ -48,6 +48,7 @@ def discover_movies(
 
     if country and country.upper() != "ALL" and "," not in country:
         params["with_origin_country"] = country
+    print(f"discover_movies received country value: '{country}' (type: {type(country).__name__})")
     print(f"TMDB params - country filter: {params.get('with_origin_country', 'NOT SET')}")
 
     try:
