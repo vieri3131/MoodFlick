@@ -1,6 +1,6 @@
 import os
 import threading
-import google.generativeai as genai
+from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -48,17 +48,16 @@ FALLBACK_REASONS = {
     "zh": "这部电影非常适合您目前的心情。",
 }
 
-_gemini_model = None
-_model_lock = threading.Lock()
+_groq_client = None
+_client_lock = threading.Lock()
 
 
-def _get_model():
-    global _gemini_model
-    with _model_lock:
-        if _gemini_model is None:
-            genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-            _gemini_model = genai.GenerativeModel("gemini-2.5-flash")
-        return _gemini_model
+def _get_client():
+    global _groq_client
+    with _client_lock:
+        if _groq_client is None:
+            _groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        return _groq_client
 
 
 def _get_language_instruction(language: str) -> str:
@@ -77,11 +76,9 @@ def _get_fallback_reason(language: str) -> str:
 
 def infer_emotion_from_keywords(raw_mood: str) -> str | None:
     normalized = raw_mood.strip().lower()
-
     for emotion, keywords in EMOTION_KEYWORD_HINTS.items():
         if any(keyword in normalized for keyword in keywords):
             return emotion
-
     return None
 
 
@@ -91,7 +88,7 @@ def parse_mood(raw_mood: str) -> str:
         return keyword_emotion
 
     try:
-        model = _get_model()
+        client = _get_client()
         prompt = f"""
 A user described their mood as: "{raw_mood}"
 
@@ -108,16 +105,21 @@ Rules:
 - "empty", "hollow", "meaningless", "pointless" -> empty
 - "frustrated", "stuck", "blocked", "trapped", "can't breathe" -> frustrated
 - "regret", "should have", "remorse", "wish I had chosen differently" -> regretful
-- "exhausted", "drained" → tired
+- "exhausted", "drained" -> tired
 - "furious", "rage" -> angry
 - Choose confused for unclear, tangled thoughts, but never because the user wants mystery or thriller.
 - Never return a word not in the list
 
 Your response must be a single word only.
 """
-        response = model.generate_content(prompt, generation_config=genai.GenerationConfig(temperature=0.0, max_output_tokens=10))
-        result = response.text.strip().lower()
-        print(f"Gemini mood output: '{result}'")
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,
+            max_tokens=10
+        )
+        result = completion.choices[0].message.content.strip().lower()
+        print(f"Groq mood output: '{result}'")
 
         if result not in ALLOWED_EMOTIONS:
             print(f"Not in list, defaulting to calm")
@@ -126,7 +128,7 @@ Your response must be a single word only.
         return result
 
     except Exception as e:
-        print(f"Gemini error in parse_mood: {e}")
+        print(f"Groq error in parse_mood: {e}")
         return "calm"
 
 
@@ -135,7 +137,7 @@ def generate_reason(raw_mood: str, movie_title: str, language: str) -> str:
     fallback = _get_fallback_reason(language)
 
     try:
-        model = _get_model()
+        client = _get_client()
         prompt = f"""
 User's mood: "{raw_mood}"
 Movie title: "{movie_title}"
@@ -149,9 +151,15 @@ Rules:
 - Sound warm and human, not robotic
 - Return only the sentence, nothing else
 """
-        response = model.generate_content(prompt, generation_config=genai.GenerationConfig(temperature=0.7, max_output_tokens=60))
-        return response.text.strip()
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=60
+        )
+        result = completion.choices[0].message.content.strip()
+        return result if result else fallback
 
     except Exception as e:
-        print(f"Gemini error in generate_reason: {e}")
+        print(f"Groq error in generate_reason: {e}")
         return fallback
