@@ -77,10 +77,11 @@ const TEXT = {
 export default function MovieModal({ movie, onClose, language }) {
   const router = useRouter();
   const text = TEXT[language] || TEXT['ko-KR'];
-  const [trailerUrl, setTrailerUrl] = useState(null);
+  const [trailerUrl, setTrailerUrl] = useState(null); 
   const [showTrailer, setShowTrailer] = useState(false);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [isWatched, setIsWatched] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   // 1. 기존 트레일러 URL 가져오기
   useEffect(() => {
@@ -178,7 +179,7 @@ export default function MovieModal({ movie, onClose, language }) {
     }
   };
 
-  return (
+return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6 md:pt-12">
       {/* 어두운 뒷배경 (클릭 시 닫힘) */}
       <div 
@@ -186,13 +187,19 @@ export default function MovieModal({ movie, onClose, language }) {
         onClick={onClose} 
       />
       
-      {/* 모달 본체 */}
-      <div className="relative w-full max-w-4xl bg-[#181818] rounded-xl shadow-2xl z-10 overflow-y-auto scrollbar-hide max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+      {/* 🌟 모달 본체 (여기에 마우스 Hover 이벤트를 달아줍니다) */}
+      <div 
+        className="relative w-full max-w-4xl bg-[#181818] rounded-xl shadow-2xl z-10 overflow-y-auto scrollbar-hide max-h-[90vh] animate-in fade-in zoom-in-95 duration-200"
+        onMouseEnter={() => setIsHovered(true)}   // 마우스가 들어오면 true
+        onMouseLeave={() => setIsHovered(false)}  // 마우스가 나가면 false
+      >
         
-        {/* 우측 상단 닫기 (X) 버튼 */}
+        {/* 우측 상단 닫기 (X) 버튼 : 영상 재생 중이고 마우스가 없을 땐 스르륵 숨김 */}
         <button 
           onClick={onClose} 
-          className="absolute top-4 right-4 z-50 p-2 bg-[#181818]/60 hover:bg-[#181818] rounded-full text-white transition-all"
+          className={`absolute top-4 right-4 z-50 p-2 bg-[#181818]/60 hover:bg-[#181818] rounded-full text-white transition-opacity duration-500 ${
+            showTrailer && !isHovered ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -202,7 +209,6 @@ export default function MovieModal({ movie, onClose, language }) {
         {/* 🎬 상단 미디어 영역 (예고편 영상 / 배경 이미지) */}
         <div className="relative aspect-video w-full bg-slate-900 overflow-hidden">
           
-          {/* 👇 영상은 맨 뒤(z-0)에 깔고, 사용자가 영상을 클릭해서 멈추는 것을 방지(pointer-events-none) */}
           {showTrailer && trailerUrl ? (
             <iframe 
               className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
@@ -216,17 +222,21 @@ export default function MovieModal({ movie, onClose, language }) {
             <img src={bgImage} className="w-full h-full object-cover z-0 relative" alt={movie.title} />
           )}
 
-          {/* 👇 자연스러운 페이드 아웃 그라데이션 (z-10으로 영상 위에 덮기) */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-[#181818]/40 to-transparent pointer-events-none z-10" />
+          {/* 👇 검은색 그라데이션 배경 : 영상 재생 중 & 마우스 치우면 숨김 */}
+          <div className={`absolute inset-0 bg-gradient-to-t from-[#181818] via-[#181818]/40 to-transparent pointer-events-none z-10 transition-opacity duration-500 ${
+            showTrailer && !isHovered ? 'opacity-0' : 'opacity-100'
+          }`} />
           
-          {/* 👇 컨트롤 버튼 오버레이 (z-20으로 맨 위로 꺼내기) */}
-          <div className="absolute bottom-[10%] left-6 sm:left-10 right-10 z-20">
+          {/* 👇 제목 및 컨트롤 버튼들 : 영상 재생 중 & 마우스 치우면 숨김 */}
+          <div className={`absolute bottom-[10%] left-6 sm:left-10 right-10 z-20 transition-opacity duration-500 ${
+            showTrailer && !isHovered ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}>
               <h1 className="text-3xl sm:text-5xl font-black text-white mb-6 drop-shadow-2xl line-clamp-2">
                 {movie.title}
               </h1>
               
               <div className="flex items-center gap-3">
-                {/* 1. 재생 (트레일러) 버튼 */}
+                {/* 재생 (트레일러) 버튼 */}
                 <button 
                   onClick={() => {
                     if (trailerUrl) setShowTrailer(!showTrailer);
@@ -235,12 +245,12 @@ export default function MovieModal({ movie, onClose, language }) {
                   className="flex items-center gap-2 bg-white text-black px-4 sm:px-6 py-2 rounded-md font-bold text-base sm:text-lg hover:bg-white/80 transition-all active:scale-95"
                 >
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                  {showTrailer ? '예고편 닫기' : '재생'}
+                  {showTrailer ? '예고편 닫기' : text.play || '재생'}
                 </button>
                 
-                {/* 2. 관심 목록 (Wishlist) 추가/해제 버튼 */}
+                {/* 관심 목록 버튼 */}
                 <button 
-                  onClick={toggleWatchlist} // 👈 토글 함수 연결
+                  onClick={toggleWatchlist} 
                   className={`p-2 border-2 rounded-full transition-all active:scale-95 group ${
                     isWatchlisted 
                       ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30' 
@@ -255,9 +265,9 @@ export default function MovieModal({ movie, onClose, language }) {
                   )}
                 </button>
                 
-                {/* 3. 시청 기록 (Watched) 추가/해제 버튼 */}
+                {/* 시청 기록 버튼 */}
                 <button 
-                  onClick={toggleWatched} // 👈 토글 함수 연결
+                  onClick={toggleWatched}
                   className={`p-2 border-2 rounded-full transition-all active:scale-95 ${
                     isWatched 
                       ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30' 
@@ -272,10 +282,10 @@ export default function MovieModal({ movie, onClose, language }) {
                   )}
                 </button>
               </div>
-           </div>
+          </div>
         </div>
 
-        {/* 📝 하단 상세 정보 영역 */}
+        {/* 📝 하단 상세 정보 영역 (이곳은 유지됩니다) */}
         <div className="p-6 sm:p-10 grid grid-cols-1 md:grid-cols-3 gap-8 text-white">
            <div className="col-span-2 space-y-5">
               <div className="flex items-center gap-3 sm:gap-4 text-sm sm:text-base font-semibold flex-wrap">
@@ -307,4 +317,3 @@ export default function MovieModal({ movie, onClose, language }) {
       </div>
     </div>
   );
-}
