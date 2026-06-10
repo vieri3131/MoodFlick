@@ -90,9 +90,10 @@ const TEXT = {
   },
 };
 
-function ProfileField({ label, value, type = 'text', text, onSave }) {
+function ProfileField({ label, value, type = 'text', text, onSave, editable = true }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
 
   const startEdit = () => {
     setDraft(type === 'password' ? '' : value || '');
@@ -101,13 +102,17 @@ function ProfileField({ label, value, type = 'text', text, onSave }) {
 
   const cancelEdit = () => {
     setDraft('');
+    setCurrentPassword('');
     setIsEditing(false);
   };
 
   const saveEdit = async () => {
-    await onSave(draft);
-    setIsEditing(false);
-    setDraft('');
+    const saved = await onSave(draft, currentPassword);
+    if (saved) {
+      setIsEditing(false);
+      setDraft('');
+      setCurrentPassword('');
+    }
   };
 
   return (
@@ -115,13 +120,23 @@ function ProfileField({ label, value, type = 'text', text, onSave }) {
       <div className="flex-1 min-w-0">
         <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{label}</p>
         {isEditing ? (
-          <input
-            type={type === 'password' ? 'password' : type}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            className="w-full px-4 py-3 bg-slate-950/70 border border-white/10 rounded-lg text-white outline-none focus:border-purple-500"
-            autoFocus
-          />
+          <div className="space-y-3">
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              placeholder={text.currentPassword || 'Current password'}
+              className="w-full px-4 py-3 bg-slate-950/70 border border-white/10 rounded-lg text-white outline-none focus:border-purple-500"
+              autoFocus
+            />
+            <input
+              type={type === 'password' ? 'password' : type}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder={type === 'password' ? text.newPassword || 'New password' : label}
+              className="w-full px-4 py-3 bg-slate-950/70 border border-white/10 rounded-lg text-white outline-none focus:border-purple-500"
+            />
+          </div>
         ) : (
           <p className="text-lg font-bold text-white truncate">
             {type === 'password' ? text.hiddenPassword : value}
@@ -129,7 +144,7 @@ function ProfileField({ label, value, type = 'text', text, onSave }) {
         )}
       </div>
 
-      {isEditing ? (
+      {editable && isEditing ? (
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -146,7 +161,7 @@ function ProfileField({ label, value, type = 'text', text, onSave }) {
             {text.cancel}
           </button>
         </div>
-      ) : (
+      ) : editable ? (
         <button
           type="button"
           onClick={startEdit}
@@ -154,7 +169,7 @@ function ProfileField({ label, value, type = 'text', text, onSave }) {
         >
           {text.edit}
         </button>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -208,13 +223,13 @@ export default function ProfilePage() {
     router.push('/');
   };
 
-  const updateProfile = async (field, value) => {
+  const updateProfile = async (field, value, currentPassword) => {
     setError('');
     setSuccess('');
     try {
       const response = await axios.patch(
         `${API_URL}/auth/profile`,
-        { [field]: value },
+        { [field]: value, current_password: currentPassword },
         { headers: getAuthHeaders() }
       );
       setProfile(response.data);
@@ -222,8 +237,10 @@ export default function ProfilePage() {
         localStorage.setItem('nickname', response.data.nickname);
       }
       setSuccess(text.updated);
+      return true;
     } catch (err) {
       setError(err.response?.data?.detail || text.updateError);
+      return false;
     }
   };
 
@@ -274,21 +291,21 @@ export default function ProfilePage() {
               label={text.nickname}
               value={profile.nickname}
               text={text}
-              onSave={(value) => updateProfile('nickname', value)}
+              onSave={(value, currentPassword) => updateProfile('nickname', value, currentPassword)}
             />
             <ProfileField
               label={text.email}
               value={profile.email}
               type="email"
               text={text}
-              onSave={(value) => updateProfile('email', value)}
+              editable={false}
             />
             <ProfileField
               label={text.password}
               value=""
               type="password"
               text={text}
-              onSave={(value) => updateProfile('password', value)}
+              onSave={(value, currentPassword) => updateProfile('password', value, currentPassword)}
             />
           </div>
         )}

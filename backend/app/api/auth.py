@@ -45,6 +45,7 @@ class ProfileUpdateRequest(BaseModel):
     nickname: str | None = None
     email: str | None = None
     password: str | None = None
+    current_password: str | None = None
 
 @router.post("/refresh")
 def refresh_token(body: RefreshRequest):
@@ -133,7 +134,10 @@ def get_profile(authorization: str | None = Header(default=None)):
 def update_profile(body: ProfileUpdateRequest, authorization: str | None = Header(default=None)):
     token = _get_bearer_token(authorization)
 
-    if not any([body.nickname is not None, body.email is not None, body.password is not None]):
+    if body.email is not None:
+        raise HTTPException(status_code=400, detail="Email cannot be changed")
+
+    if not any([body.nickname is not None, body.password is not None]):
         raise HTTPException(status_code=400, detail="No profile changes provided")
 
     try:
@@ -151,18 +155,23 @@ def update_profile(body: ProfileUpdateRequest, authorization: str | None = Heade
     updates = {}
     metadata = dict(user.user_metadata or {})
 
+    if not body.current_password:
+        raise HTTPException(status_code=400, detail="Current password is required")
+
+    try:
+        supabase.auth.sign_in_with_password({
+            "email": user.email,
+            "password": body.current_password
+        })
+    except Exception:
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+
     if body.nickname is not None:
         nickname = body.nickname.strip()
         if not nickname:
             raise HTTPException(status_code=400, detail="Nickname is required")
         metadata["nickname"] = nickname
         updates["user_metadata"] = metadata
-
-    if body.email is not None:
-        email = body.email.strip()
-        if not email:
-            raise HTTPException(status_code=400, detail="Email is required")
-        updates["email"] = email
 
     if body.password is not None:
         if len(body.password) < 6:
